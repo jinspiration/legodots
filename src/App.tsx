@@ -1,8 +1,8 @@
 import React from "react";
-import { DotProp, Dot } from "./Dot";
-
+import { ReactComponent as Defs } from "./assets/defs.svg";
+export type Dot = [string, string?, number?];
 function App() {
-  const dots: Array<DotProp> = [
+  const dots: Array<Dot> = [
     ["rect", "blue"],
     ["arc", "green", 1],
     ["arc", "purple", 2],
@@ -14,14 +14,28 @@ function App() {
   ];
   return (
     <div className="App">
+      <Defs />
       <h1 className="bg-lego-purple">title</h1>
-      <div className="md:container md:mx-auto">
-        <svg>
-          {dots.map((dotProp, index) => (
-            <React.Fragment key={index.toString()}>
-              <Dot dotProp={dotProp} index={index}></Dot>
-            </React.Fragment>
-          ))}
+      <div className="md:container md:mx-auto flex">
+        <svg width={600} height={600}>
+          <g transform={"scale(2) translate(10,10)"}>
+            {dots.map((dot, index) => {
+              const x = index % 4,
+                y = Math.floor(index / 4);
+              return (
+                <use
+                  href={"#" + dot[0]}
+                  className={`fill-lego-${dot[1]}`}
+                  transform={`translate(${x * 50},${y * 50}) rotate(${
+                    (dot[2] ?? 0) * 90
+                  } ${50 / 2} ${50 / 2}) `}
+                />
+                // <React.Fragment key={index.toString()}>
+                //   <Dot dotProp={dotProp} x={x} y={y}></Dot>
+                // </React.Fragment>
+              );
+            })}
+          </g>
         </svg>
       </div>
     </div>
