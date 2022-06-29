@@ -15,6 +15,23 @@ const Defs: React.FC = () => {
             floodOpacity="0.8"
           />
         </filter>
+        <pattern
+          id="Pattern"
+          x="0"
+          y="0"
+          width={DOT}
+          height={DOT}
+          patternUnits="userSpaceOnUse"
+        >
+          <rect x="0" y="0" width={DOT} height={DOT} fill="blue" />
+          <circle
+            cx={DOT / 2}
+            cy={DOT / 2}
+            r={DOT * 0.3}
+            fill="blue"
+            filter="url(#shadow)"
+          />
+        </pattern>
         <rect
           id="rect"
           stroke="black"

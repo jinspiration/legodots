@@ -1,5 +1,5 @@
 const legoColors = {
-  "lego-blue": "#0067B1",
+  "lego-blue": "#0057A1",
   "lego-blue-light": "#019BD7",
   "lego-green": "#01A227",
   "lego-yellow": "#FEB400",
