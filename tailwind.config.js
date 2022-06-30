@@ -1,15 +1,15 @@
-const { legoColors } = require("./config");
+const { COLORS } = require("./src/meta");
 
 /** @type {import('tailwindcss').Config} */
 
-const fillLegoColors = Object.keys(legoColors).map((c) => "fill-" + c);
+const fillLegoColors = Object.keys(COLORS).map((c) => "fill-" + c);
 console.log(fillLegoColors);
 module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        ...legoColors,
+        ...COLORS,
       },
     },
   },

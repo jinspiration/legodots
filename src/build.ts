@@ -1,37 +1,37 @@
 import { useReducer, useState } from "react";
-import { Dot, History } from "./App";
+import { Board, Dot, History } from "./App";
+
 export type Used = { [key: string]: number };
 export type State = {
-  current: [Dot, number?] | null;
-  selected: number | null;
   used: Used;
-  build: Array<History>;
+  board: Board;
 };
-
-type Action = { type: string; payload: any };
+export enum ActionType {
+  LOAD = "load",
+}
+type Action = { type: ActionType.LOAD; payload: [number, number, Board] };
 function reducer(state: State, action: Action) {
+  let board: Board = {},
+    used: Used = {};
   switch (action.type) {
-    case "SET_BOARD":
-      return action.payload;
+    case ActionType.LOAD:
+      used = {};
+      Object.values(action.payload[2]).forEach(([shape, color]) => {
+        const key = shape + "." + color;
+        if (key in used) {
+          used[key] += 1;
+        } else {
+          used[key] = 1;
+        }
+      });
+      return { used, board: action.payload[2] };
     default:
       return state;
   }
 }
 
-export default function useBuild(
-  initBuild: Array<History>
-): [State, (action: Action) => void] {
-  const [current, setCurrent] = useState<[Dot, number?] | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
+export default function useBuild(): [State, (action: Action) => void] {
   const [used, setUsed] = useState<Used>({});
-  const [build, setBuild] = useState(initBuild || []);
-  build.forEach((history) => {
-    const key = history[0].join(".");
-    if (key in used) {
-      used[key]++;
-    } else {
-      used[key] = 1;
-    }
-  });
-  return useReducer(reducer, { current, selected, used, build });
+  const [board, setBoard] = useState<Board>({});
+  return useReducer(reducer, { used, board });
 }
