@@ -4,7 +4,7 @@
 
 @layer utilities {
   .md-layout {
-    grid-template-columns: 4rem minmax(0, 1fr);
-    grid-template-rows: 4rem minmax(0, 1fr);
+    grid-template-columns: 6rem minmax(0, 1fr);
+    grid-template-rows: 6rem minmax(0, 1fr);
   }
 }

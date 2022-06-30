@@ -9,7 +9,7 @@
       <text x="15" y="16" font-size="7" font-style="italic" opacity="0.3" transform="scale(1,1.8)">LEGO</text>
     </pattern>
     <rect id="rect" stroke="black" stroke-width="0.15" x="1" y="1" width="48" height="48" rx="3" filter="url(#shadow)" />
-    <circle id="circle" cx="24" cy="24" r="24" stroke="black" strokeWidth="0.15" filter="url(#shadow)" />
-    <path id="arc" d="M1,1 l48,0 a48,48 0 0,1 -48,48 l0,-48`" stroke="black" strokeWidth="0.15" filter="url(#shadow)"></path>
+    <circle id="circle" cx="25" cy="25" r="23" stroke="black" strokeWidth="0.15" filter="url(#shadow)" />
+    <path id="arc" d="m1,1 l48,0 a48,48 0 0,1 -48,48 l0,-48" stroke="black" strokeWidth="0.15" filter="url(#shadow)"></path>
   </defs>
 </svg>
