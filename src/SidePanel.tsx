@@ -1,7 +1,7 @@
 import React from "react";
 import { Dot } from "./App";
 import { Used } from "./build";
-import { GRID, SHAPES, COLORS } from "./meta.js";
+import { GRID, SHAPES, DOTCOLORS } from "./meta.js";
 
 const Sidebar: React.FC<{
   used: Used;
@@ -39,7 +39,7 @@ const Sidebar: React.FC<{
         </div>
         <div className="basis-1/2">
           {current
-            ? Object.keys(COLORS).map((color) => (
+            ? Object.keys(DOTCOLORS).map((color) => (
                 <svg
                   key={color}
                   className="basis-1/2 p-0.5"

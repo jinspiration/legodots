@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .menu-div {
+    @apply rounded-md m-1 overflow-hidden ring-2 ring-white hover:ring-red-500;
+  }
+  .menu-icon {
+    @apply w-full h-full p-1 fill-black hover:fill-white hover:bg-black;
+  }
+}
 @layer utilities {
   .md-layout {
     grid-template-columns: 6rem minmax(0, 1fr);

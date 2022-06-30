@@ -1,11 +1,29 @@
 import React, { useCallback, useEffect } from "react";
+import {
+  MdModeEdit,
+  MdOutlineFileCopy,
+  MdOutlineFileDownload,
+  MdOutlinePanTool,
+  MdOutlinePrint,
+  MdOutlineRedo,
+  MdOutlineRotate90DegreesCcw,
+  MdOutlineSelectAll,
+  MdOutlineUndo,
+  MdOutlineWindow,
+} from "react-icons/md";
+import { BsHandIndexThumb, BsArrowsMove } from "react-icons/bs";
 import { ReactComponent as Defs } from "./assets/defs.svg";
-import { GRID, SHAPES, COLORS, HASROTATE } from "./meta.js";
+import { GRID, SHAPES, BOARDCOLORS, DOTCOLORS, HASROTATE } from "./meta.js";
 import useBuild, { ActionType } from "./build";
 
 export type Dot = [string, string, number?];
 export type Board = { [key: number]: Dot };
 export type History = [Dot, number, number?];
+export enum ModeType {
+  SELECT = "select",
+  EDIT = "edit",
+  PAN = "pan",
+}
 const initBuild: Board = {
   123: ["circle", "yellow"],
   227: ["circle", "purple"],
@@ -26,8 +44,9 @@ const initBuild: Board = {
 };
 
 function App() {
-  const [[m, n], setDimensions] = React.useState([16, 16]);
-  const [current, setCurrent] = React.useState<Dot>(["rect", "blue-light"]);
+  const [dimension, setDimensions] = React.useState([32, 16]);
+  const [current, setCurrent] = React.useState<Dot>(["rect", "yellow-light"]);
+  const [mode, setMode] = React.useState<ModeType>(ModeType.EDIT);
   const [{ used, board }, dispatch] = useBuild();
   const [usedCount, setUsedCount] = React.useState<
     Array<[string, string, number]>
@@ -40,10 +59,32 @@ function App() {
       const j = Math.floor(p.x / GRID),
         i = Math.floor(p.y / GRID);
       console.log("coordinate", i, j);
-      return i * n + j;
+      return i * dimension[0] + j;
     },
-    [m, n]
+    [dimension]
   );
+  function rotateCurrent() {
+    setCurrent((current) => {
+      if (HASROTATE.includes(current[0])) {
+        return [current[0], current[1], ((current[2] ?? 0) + 1) % 4];
+      } else {
+        return current;
+      }
+    });
+  }
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      e.preventDefault();
+      switch (e.key) {
+        case "r":
+          rotateCurrent();
+      }
+    };
+    document.body.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.removeEventListener("keydown", handleKey);
+    };
+  }, []);
   useEffect(() => {
     console.log(current);
   }, [current]);
@@ -60,17 +101,11 @@ function App() {
   return (
     <div className="App">
       <Defs />
-
       <div className="container h-screen p-4 lg:mx-auto grid grid-cols-2 md-layout">
         <svg
           className="p-0.5"
           viewBox={`0 0 ${GRID} ${GRID}`}
-          onClick={() => {
-            if (HASROTATE.includes(current[0])) {
-              console.log("rotate");
-              setCurrent([current[0], current[1], ((current[2] ?? 0) + 1) % 4]);
-            }
-          }}
+          onClick={rotateCurrent}
         >
           <use
             href={"#" + current[0]}
@@ -99,7 +134,7 @@ function App() {
             ))}
           </div>
           <div className="flex basis-1/2">
-            {Object.keys(COLORS).map((color) => (
+            {Object.keys(DOTCOLORS).map((color) => (
               <svg
                 key={color}
                 className="h-full p-0.5"
@@ -120,62 +155,156 @@ function App() {
           </div>
         </div>
         <div className="w-full">
-          <div className="bg-gray-300 flex flex-col h-80 justify-around">
-            <button
+          <div className="rounded-lg bg-yellow-300 grid  grid-cols-2  justify-center items-center [&>div]:menu-div [&>div>svg]:menu-icon">
+            <div>
+              <BsArrowsMove />
+            </div>
+            <div
+              className={
+                mode === ModeType.EDIT ? "bg-red-500 ring-red-500" : ""
+              }
               onClick={() => {
-                dispatch({ type: ActionType.LOAD, payload: [m, n, initBuild] });
+                setMode(ModeType.EDIT);
               }}
             >
-              Load
-            </button>
-            <button onClick={() => setDimensions([32, 32])}>32</button>
-            <button onClick={() => setDimensions([16, 16])}>16</button>
+              <MdModeEdit />
+            </div>
+            <div>
+              <MdOutlineSelectAll />
+            </div>
+            <div>
+              <BsHandIndexThumb
+                className={mode === ModeType.SELECT ? "bg-red-500" : ""}
+                onClick={() => {
+                  setMode(ModeType.SELECT);
+                }}
+              />
+            </div>
+            <div>
+              <MdOutlineRotate90DegreesCcw />
+            </div>
+            <div className={mode === ModeType.PAN ? "bg-red-500" : ""}>
+              <MdOutlinePanTool
+                onClick={() => {
+                  setMode(ModeType.PAN);
+                }}
+              />
+            </div>
+            <div>
+              <MdOutlineUndo />
+            </div>
+            <div>
+              <MdOutlineRedo />
+            </div>
+          </div>
+          <div className="rounded-lg bg-red-500 grid grid-cols-2 [&>div]:menu-div [&>div>svg]:menu-icon">
+            <div>
+              <MdOutlineWindow />
+            </div>
+
+            <div
+              onClick={() => {
+                // dispatch({ type: ActionType.LOAD, payload: initBuild });
+              }}
+            >
+              <MdOutlineFileCopy />
+            </div>
+            <div>
+              <MdOutlineFileDownload />
+            </div>
+            <div>
+              <MdOutlinePrint />
+            </div>
           </div>
           <div className="flex flex-wrap bg-green-200 grow p-1">
-            {usedCount.map(([shape, color, occ], index) => (
-              <div
-                key={[shape, color, occ, index].join(".")}
-                className="basis-1/2 relative"
-              >
-                <span className="absolute bottom-0 right-0 text-sm w-4 text-center bg-white rounded-full font-mono">
-                  {occ}
-                </span>
-                <svg
-                  className="basis-1/2 p-0.5"
-                  viewBox={`0 0 ${GRID} ${GRID}`}
+            <div className="w-full">
+              <span>OnBoard</span>
+            </div>
+            {usedCount
+              .filter((d) => d[2] > 0)
+              .map(([shape, color, occ], index) => (
+                <div
+                  key={[shape, color, occ, index].join(".")}
+                  className="basis-1/2 relative"
                 >
-                  <use href={"#" + shape} className={`fill-lego-${color}`} />
-                </svg>
-              </div>
-            ))}
+                  <span className="absolute bottom-0 right-0 text-sm w-4 text-center bg-white rounded-full font-mono">
+                    {occ}
+                  </span>
+                  <svg
+                    className="basis-1/2 p-0.5"
+                    viewBox={`0 0 ${GRID} ${GRID}`}
+                    onClick={() => {
+                      setCurrent([shape, color]);
+                    }}
+                  >
+                    <use href={"#" + shape} className={`fill-lego-${color}`} />
+                  </svg>
+                </div>
+              ))}
+            <div className="w-full">
+              <span>Used</span>
+            </div>
+            {usedCount
+              .filter((d) => d[2] < 1)
+              .map(([shape, color, occ], index) => (
+                <div
+                  key={[shape, color, occ, index].join(".")}
+                  className="basis-1/2 relative"
+                >
+                  <svg
+                    className="basis-1/2 p-0.5"
+                    viewBox={`0 0 ${GRID} ${GRID}`}
+                    onClick={() => {
+                      setCurrent([shape, color]);
+                    }}
+                  >
+                    <use href={"#" + shape} className={`fill-lego-${color}`} />
+                  </svg>
+                </div>
+              ))}
           </div>
           {/* <SidePanel used={used} current={current} setCurrent={setCurrent} /> */}
         </div>
         <svg
           id="board"
-          viewBox={`0 0 ${m * GRID} ${n * GRID}`}
-          color={"blue"}
+          viewBox={`0 0 ${dimension[0] * GRID} ${dimension[1] * GRID}`}
           className={`bg-lego-blue max-h-full max-w-full`}
         >
           <rect
             onClick={(e) => {
-              console.log("place", getPlace(e.clientX, e.clientY));
+              e.preventDefault();
+              if (mode === ModeType.EDIT) {
+                const place = getPlace(e.clientX, e.clientY);
+                console.log("place", place, current);
+                dispatch({
+                  type: ActionType.PLACE,
+                  payload: [current, place],
+                });
+              }
             }}
             className="bg-lego-blue"
             fill="url(#pattern)"
-            width={m * GRID}
-            height={n * GRID}
+            width={dimension[0] * GRID}
+            height={dimension[1] * GRID}
           />
           {Object.entries(board).map(([_place, [shape, color, rotate]]) => {
             const place = parseInt(_place);
             if (place < 0) return null;
-            const x = place % m,
-              y = Math.floor(place / m);
+            const x = place % dimension[0],
+              y = Math.floor(place / dimension[0]);
             return (
               <use
                 key={_place}
                 onClick={(e) => {
-                  console.log("onShape", getPlace(e.clientX, e.clientY));
+                  e.preventDefault();
+                  if (mode === ModeType.EDIT) {
+                    const place = getPlace(e.clientX, e.clientY);
+                    console.log("remove", place, [shape, color]);
+                    dispatch({
+                      type: ActionType.REMOVE,
+                      payload: place,
+                    });
+                  }
                 }}
                 href={"#" + shape}
                 className={`fill-lego-${color} hover:fill-white`}
