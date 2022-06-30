@@ -3,12 +3,8 @@
 @tailwind utilities;
 
 @layer utilities {
-  .square {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 50%;
-    /* display: inline-block; */
-    /* vertical-align: middle;
-    margin-right: 0.25rem; */
+  .md-layout {
+    grid-template-columns: 4rem minmax(0, 1fr);
+    grid-template-rows: 4rem minmax(0, 1fr);
   }
 }
