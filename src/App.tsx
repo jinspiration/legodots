@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from "react";
 import {
   MdModeEdit,
   MdOutlineDeleteForever,
+  MdOutlineEditOff,
   MdOutlineFileCopy,
   MdOutlineFileDownload,
   MdOutlineFormatColorFill,
@@ -12,26 +13,21 @@ import {
   MdOutlineRotate90DegreesCcw,
   MdOutlineSelectAll,
   MdOutlineUndo,
+  MdOutlineWaterDrop,
   MdOutlineWindow,
+  MdWaterDrop,
 } from "react-icons/md";
 import { BsHandIndexThumb, BsArrowsMove } from "react-icons/bs";
 import { ReactComponent as Defs } from "./assets/defs.svg";
 import { GRID, SHAPES, BOARDCOLORS, DOTCOLORS, HASROTATE } from "./meta.js";
 import useBuild, { ActionType } from "./build";
 import { smartSelect } from "./helpers";
+import { ModeType, Selected } from "./control";
 
 export type Dot = [string, string, number?];
 export type Board = { [key: number]: Dot };
 export type History = [Dot, number, number?];
-export type Selected = Array<[number, Dot]>;
-export enum ModeType {
-  EDIT = "edit",
-  SELECT = "select",
-  DROP = "drop",
-  MULTISELECT = "multiselect",
-  MULTIDROP = "multidrop",
-  PAN = "pan",
-}
+
 const initBuild: Board = {
   123: ["circle", "yellow"],
   227: ["circle", "lilac"],
@@ -52,9 +48,13 @@ const initBuild: Board = {
 };
 
 function App() {
-  const [dimension, setDimensions] = React.useState([16, 16]);
-  const [current, setCurrent] = React.useState<Dot>(["rect", "blue-light  "]);
-  const [mode, setMode] = React.useState<ModeType>(ModeType.SELECT);
+  const [dimension, setDimensions] = React.useState([16, 32]);
+  const [viewBox, setViewBox] = React.useState(
+    `0 0 ${GRID * dimension[0]} ${GRID * dimension[1]}`
+  );
+  const [current, setCurrent] = React.useState<Dot>(["rect", "blue-light"]);
+  const [curColor, setCurColor] = React.useState<string>("blue-light");
+  const [mode, setMode] = React.useState<ModeType>(ModeType.EDIT);
   const [{ used, board }, dispatch] = useBuild();
   const [selected, setSelected] = React.useState<Selected>([]);
   const [droppable, setDroppable] = React.useState(false);
@@ -66,6 +66,7 @@ function App() {
       const svg = document.getElementById("board");
       let p = new DOMPoint(x, y);
       p = p.matrixTransform((svg as any).getScreenCTM().inverse());
+      console.log(p.x, p.y);
       const j = Math.floor(p.x / GRID),
         i = Math.floor(p.y / GRID);
       console.log("coordinate", i, j);
@@ -81,6 +82,37 @@ function App() {
         return current;
       }
     });
+  }
+  function handlePress(place: number) {
+    switch (mode) {
+      case ModeType.EDIT:
+        return dispatch({
+          type: ActionType.EDIT,
+          payload: [[...current], place],
+        });
+      case ModeType.DELETE:
+        return dispatch({ type: ActionType.DELETE, payload: place });
+      case ModeType.FILL:
+        return dispatch({
+          type: ActionType.FILL,
+          payload: [place, curColor],
+        });
+    }
+  }
+  function handleZoom(e: React.WheelEvent): void {
+    // e.preventDefault();
+    const delta = e.deltaY > 0 ? 1.1 : 0.9;
+    const svg = document.getElementById("svg");
+    const [x, y, width, height] = viewBox.split(" ").map(Number);
+    const p = new DOMPoint(e.clientX, e.clientY);
+    const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
+    const _viewBox = [
+      x - (sp.x - x) * (delta - 1),
+      y - (sp.y - y) * (delta - 1),
+      width * delta,
+      height * delta,
+    ].join(" ");
+    setViewBox(_viewBox);
   }
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -99,9 +131,10 @@ function App() {
   useEffect(() => {
     console.log(
       mode,
+      current,
       selected.map(([i, dot]) => i)
     );
-  }, [mode, selected]);
+  }, [mode, selected, current]);
   useEffect(() => {
     const usedArray = Object.entries(used).map(([dot, occ]) => {
       const [shape, color] = dot.split(".");
@@ -130,7 +163,7 @@ function App() {
           />
         </svg>
         <div className=" m-1 flex justify-between rounded-lg ">
-          <div className="flex flex-col grow rounded-lg items-start bg-white p-1">
+          <div className="flex flex-col grow rounded-lg items-start bg-gray-800 p-1">
             <div className="flex basis-1/2 max-w-full">
               {SHAPES.map((shape) => (
                 <svg
@@ -138,7 +171,9 @@ function App() {
                   className="h-full p-0.5"
                   viewBox={`0 0 ${GRID} ${GRID}`}
                   onClick={() => {
-                    setCurrent([shape, current[1]]);
+                    HASROTATE.includes(shape)
+                      ? setCurrent([shape, current[1], 0])
+                      : setCurrent([shape, current[1]]);
                   }}
                 >
                   <use
@@ -149,24 +184,41 @@ function App() {
               ))}
             </div>
             <div className="flex basis-1/2 max-w-full ">
-              {Object.keys(DOTCOLORS).map((color) => (
-                <svg
-                  key={color}
-                  className="h-full p-0.5"
-                  viewBox={`0 0 ${GRID} ${GRID}`}
-                  onClick={() => {
-                    setCurrent([current[0], color.slice(5)]);
-                  }}
-                >
-                  <use
-                    href={current ? "#" + current[0] : "#rect"}
-                    className={`fill-${color} w-full h-full`}
-                    transform={`rotate(${
-                      current.length > 2 ? current[2]! * 90 : 0
-                    } ${GRID / 2} ${GRID / 2}) `}
-                  />
-                </svg>
-              ))}
+              {Object.keys(DOTCOLORS).map((_color) => {
+                const color = _color.slice(5);
+                return mode === ModeType.FILL || mode === ModeType.MULTIFILL ? (
+                  <div
+                    key={color}
+                    className={`h-full p-0.5 ${
+                      color === curColor ? "scale-125" : ""
+                    } hover:scale-125`}
+                    onClick={() => setCurColor(color)}
+                  >
+                    <MdWaterDrop
+                      className={`fill-lego-${color} w-full h-full `}
+                    />
+                  </div>
+                ) : (
+                  <svg
+                    key={color}
+                    className="h-full p-0.5"
+                    viewBox={`0 0 ${GRID} ${GRID}`}
+                    onClick={() => {
+                      HASROTATE.includes(current[0])
+                        ? setCurrent([current[0], color, 0])
+                        : setCurrent([current[0], color]);
+                    }}
+                  >
+                    <use
+                      href={current ? "#" + current[0] : "#rect"}
+                      className={`fill-lego-${color} w-full h-full`}
+                      transform={`rotate(${
+                        current.length > 2 ? current[2]! * 90 : 0
+                      } ${GRID / 2} ${GRID / 2}) `}
+                    />
+                  </svg>
+                );
+              })}
             </div>
           </div>
           {mode === ModeType.DROP && (
@@ -177,8 +229,16 @@ function App() {
         </div>
         <div className="w-full flex flex-col gap-y-1 mt-1">
           <div className="rounded-lg bg-lego-yellow grid  grid-cols-2  justify-center items-center [&>div]:menu-div [&>div>svg]:menu-icon">
-            <div>
-              <MdOutlineFormatShapes />
+            <div
+              className={
+                mode === ModeType.DELETE ? "bg-red-500 ring-red-500" : ""
+              }
+              onClick={() => {
+                setMode(ModeType.DELETE);
+                setSelected([]);
+              }}
+            >
+              <MdOutlineEditOff />
             </div>
             <div
               className={
@@ -190,6 +250,29 @@ function App() {
               }}
             >
               <MdModeEdit />
+            </div>
+
+            <div
+              className={
+                mode === ModeType.MULTIFILL ? "bg-red-500 ring-red-500" : ""
+              }
+              onClick={() => {
+                setMode(ModeType.MULTIFILL);
+                setSelected([]);
+              }}
+            >
+              <MdOutlineFormatColorFill />
+            </div>
+            <div
+              className={
+                mode === ModeType.FILL ? "bg-red-500 ring-red-500" : ""
+              }
+              onClick={() => {
+                setMode(ModeType.FILL);
+                setSelected([]);
+              }}
+            >
+              <MdOutlineWaterDrop />
             </div>
             <div
               className={
@@ -272,6 +355,7 @@ function App() {
                       className="basis-1/2 p-0.5"
                       viewBox={`0 0 ${GRID} ${GRID}`}
                       onClick={() => {
+                        setMode(ModeType.EDIT);
                         setCurrent([shape, color]);
                       }}
                     >
@@ -300,6 +384,7 @@ function App() {
                       viewBox={`0 0 ${GRID} ${GRID}`}
                       onClick={() => {
                         setCurrent([shape, color]);
+                        setMode(ModeType.EDIT);
                       }}
                     >
                       <use
@@ -313,91 +398,121 @@ function App() {
           </div>
           {/* <SidePanel used={used} current={current} setCurrent={setCurrent} /> */}
         </div>
-        <svg
-          id="board"
-          viewBox={`0 0 ${dimension[0] * GRID} ${dimension[1] * GRID}`}
-          className={`bg-lego-blue rounded-md m-1 max-h-full max-w-full`}
-        >
-          <rect
-            onClick={(e) => {
-              e.preventDefault();
-              if (mode === ModeType.EDIT) {
-                const place = getPlace(e.clientX, e.clientY);
-                console.log("place", place, current);
-                dispatch({
-                  type: ActionType.PLACE,
-                  payload: [current, place],
-                });
-              }
-            }}
-            className="bg-lego-blue"
-            fill="url(#pattern)"
-            width={dimension[0] * GRID}
-            height={dimension[1] * GRID}
-          />
-          {Object.entries(board).map(([_place, [shape, color, rotate]]) => {
-            const place = parseInt(_place);
-            if (place < 0) return null;
-            const x = place % dimension[0],
-              y = Math.floor(place / dimension[0]);
-            return (
-              // <>
-              <use
-                key={_place}
+        <div className="m-2 overflow-hidden" onWheel={handleZoom}>
+          <svg
+            id="svg"
+            viewBox={viewBox}
+            // viewBox={`0 0 ${dimension[0] * GRID} ${dimension[1] * GRID}`}
+            preserveAspectRatio="xMidYMid meet"
+            className={`bg-gray-200 rounded-lg p-4 h-full w-full`}
+          >
+            <g
+              id="board"
+              // transform={`translate(400,400) rotate(90 ${
+              //   (dimension[0] * GRID) / 2
+              // } ${(dimension[1] * GRID) / 2})`}
+            >
+              <rect
+                x="0"
+                y="0"
                 onClick={(e) => {
                   e.preventDefault();
-                  if (mode === ModeType.EDIT) {
-                    const place = getPlace(e.clientX, e.clientY);
-                    console.log("remove", place, [shape, color]);
-                    dispatch({
-                      type: ActionType.REMOVE,
-                      payload: place,
-                    });
-                  } else if (mode === ModeType.SELECT) {
-                    setSelected([[place, board[place]]]);
-                    setMode(ModeType.DROP);
-                  } else if (mode === ModeType.DROP) {
-                    if (selected[0][0] === place) {
-                      setMode(ModeType.SELECT);
-                      setSelected([]);
-                    } else if (selected[0][0] in board) {
-                      setSelected([[place, board[place]]]);
-                    } else {
-                      //dispatch
-                      console.log("dispatch");
-                    }
-                  } else if (mode === ModeType.MULTISELECT) {
-                    const _select = smartSelect(board, dimension[0], place);
-                    console.log("smartSelect", place, _select);
-                    setSelected(_select);
-                    setMode(ModeType.MULTIDROP);
-                  } else if (mode === ModeType.MULTIDROP) {
-                    if (droppable) {
-                      //dispatch
-                      console.log("dispatch");
-                    } else {
-                      setMode(ModeType.MULTISELECT);
-                      setSelected([]);
-                    }
-                  }
+                  const place = getPlace(e.clientX, e.clientY);
+                  handlePress(place);
+                  // dispatch({
+                  //   type: ActionType.EDIT,
+                  //   payload: [current, place],
+                  // });
                 }}
-                href={"#" + shape}
-                className={`fill-lego-${color} hover:fill-white`}
-                transform={`translate(${x * GRID},${y * GRID}) rotate(${
-                  (rotate ?? 0) * 90
-                } ${GRID / 2} ${GRID / 2}) `}
+                className="fill-lego-blue"
+                width={dimension[0] * GRID}
+                height={dimension[1] * GRID}
               />
-              //   <text
-              //     x="25"
-              //     y="25"
-              //     transform={`translate(${x * GRID},${y * GRID})`}
-              //   >
-              //     {rotate ?? 0}
-              //   </text>
-              // </>
-            );
-          })}
-        </svg>
+              <rect
+                x="0"
+                y="0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const place = getPlace(e.clientX, e.clientY);
+                  handlePress(place);
+                  // dispatch({
+                  //   type: ActionType.EDIT,
+                  //   payload: [current, place],
+                  // });
+                }}
+                className="bg-lego-blue"
+                fill="url(#pattern)"
+                width={dimension[0] * GRID}
+                height={dimension[1] * GRID}
+              />
+              {Object.entries(board).map(([_place, [shape, color, rotate]]) => {
+                const place = parseInt(_place);
+                if (place < 0) return null;
+                const x = place % dimension[0],
+                  y = Math.floor(place / dimension[0]);
+                return (
+                  // <>
+                  <use
+                    key={_place}
+                    onClick={() => {
+                      handlePress(place);
+                    }}
+                    // onClick={(e) => {
+                    //   e.preventDefault();
+                    //   if (mode === ModeType.EDIT) {
+                    //     const place = getPlace(e.clientX, e.clientY);
+                    //     console.log("remove", place, [shape, color]);
+                    //     dispatch({
+                    //       type: ActionType.REMOVE,
+                    //       payload: place,
+                    //     });
+                    //   } else if (mode === ModeType.SELECT) {
+                    //     setSelected([[place, board[place]]]);
+                    //     setMode(ModeType.DROP);
+                    //   } else if (mode === ModeType.DROP) {
+                    //     if (selected[0][0] === place) {
+                    //       setMode(ModeType.SELECT);
+                    //       setSelected([]);
+                    //     } else if (selected[0][0] in board) {
+                    //       setSelected([[place, board[place]]]);
+                    //     } else {
+                    //       //dispatch
+                    //       console.log("dispatch");
+                    //     }
+                    //   } else if (mode === ModeType.MULTISELECT) {
+                    //     const _select = smartSelect(board, dimension[0], place);
+                    //     console.log("smartSelect", place, _select);
+                    //     setSelected(_select);
+                    //     setMode(ModeType.MULTIDROP);
+                    //   } else if (mode === ModeType.MULTIDROP) {
+                    //     if (droppable) {
+                    //       //dispatch
+                    //       console.log("dispatch");
+                    //     } else {
+                    //       setMode(ModeType.MULTISELECT);
+                    //       setSelected([]);
+                    //     }
+                    //   }
+                    // }}
+                    href={"#" + shape}
+                    className={`fill-lego-${color} hover:fill-white`}
+                    transform={`translate(${x * GRID},${y * GRID}) rotate(${
+                      (rotate ?? 0) * 90
+                    } ${GRID / 2} ${GRID / 2}) `}
+                  />
+                  //   <text
+                  //     x="25"
+                  //     y="25"
+                  //     transform={`translate(${x * GRID},${y * GRID})`}
+                  //   >
+                  //     {rotate ?? 0}
+                  //   </text>
+                  // </>
+                );
+              })}
+            </g>
+          </svg>
+        </div>
       </div>
     </div>
   );

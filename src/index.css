@@ -4,7 +4,7 @@
 
 @layer components {
   .menu-div {
-    @apply rounded-md m-1 overflow-hidden ring-2 ring-white hover:ring-red-500;
+    @apply rounded-md m-1 overflow-hidden ring-2  hover:ring-red-500;
   }
   .menu-icon {
     @apply w-full h-full p-1 fill-black hover:fill-white hover:bg-black;
