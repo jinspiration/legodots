@@ -60,6 +60,7 @@ function App() {
     }) translate(0,0)`
   );
   const panRef = React.useRef<[boolean, number, number]>();
+  const boardRef = React.useRef<any>(null);
   // const [transform, setTransform] = React.useState("matrix(1,0,0,1,0,0)");
   const [current, setCurrent] = React.useState<Dot>(["rect", "blue-light"]);
   const [curColor, setCurColor] = React.useState<string>("blue-light");
@@ -175,81 +176,86 @@ function App() {
         const place = getPlace(event.clientX, event.clientY);
         handlePress(place);
       },
-      onDragStart: () => {
-        console.log("drag start");
-        const [_, x, y] = panRef.current!;
-        panRef.current! = [true, x, y];
-      },
-      onDragEnd: () => {
-        console.log("drag end");
-        const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
-        panRef.current = [true, paras[3], paras[4]];
-      },
-      onDrag: ({
-        offset: [fx, fy],
-        xy: [x, y],
-        initial: [ox, oy],
-        movement: [mx, my],
-        target,
-        currentTarget,
-      }) => {
-        // console.log(target, currentTarget);
-        // const arg = args.distance;
-        // console.log("drag", mx, my);
-        // console.log("move", mx, my);
-        // console.log("drag", fx, fy);
-        // console.log(getPlace(ox, oy));
-        const board = document.getElementById("board");
-        const zero = new DOMPoint(0, 0).matrixTransform(
-          (board as any).getScreenCTM().inverse()
-        );
-        const c = new DOMPoint(x, y).matrixTransform(
-          (board as any).getScreenCTM().inverse()
-        );
-        const o = new DOMPoint(ox, oy).matrixTransform(
-          (board as any).getScreenCTM().inverse()
-        );
-        // const move = new DOMPoint(arg[0], arg[1]);
-        const m = new DOMPoint(mx, my).matrixTransform(
-          (board as any).getScreenCTM().inverse()
-        );
-        const f = new DOMPoint(fx, fy).matrixTransform(
-          (board as any).getScreenCTM().inverse()
-        );
-        // console.log("pan", m.x - zero.x, m.y - zero.y);
-        // setTransform((t) => {
-        const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
-        // console.log(paras);
-        // console.log("pan", dx, dy, paras[3], paras[4]);
-        // console.log(board?.getAttribute("transform"));
-        // board?.setAttribute(
-        //   "transform",
-        //   `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
-        //     paras[3] + m.x - zero.x
-        //   } ${paras[4] + m.y - zero.y})`
-        // );
-        // console.log(transform);
-        setTransform(
-          `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
-            panRef.current![1] + m.x - zero.x
-          } ${panRef.current![2] + m.y - zero.y})`
-        );
-        // });
-        // pan(m.x, m.y);
-        // pan(d.x, d.y);
-      },
-      onWheel: ({ event }) => {
-        const delta = event.deltaY > 0 ? 1.1 : 0.9;
-        const svg = document.getElementById("svg");
-        const p = new DOMPoint(event.clientX, event.clientY);
-        const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
-        zoom(sp.x, sp.y, delta);
-      },
+      // onDragStart: () => {
+      //   console.log("drag start");
+      //   const [_, x, y] = panRef.current!;
+      //   panRef.current! = [true, x, y];
+      // },
+      // onDragEnd: () => {
+      //   console.log("drag end");
+      //   const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
+      //   panRef.current = [true, paras[3], paras[4]];
+      // },
+      // onDrag: ({
+      //   offset: [fx, fy],
+      //   xy: [x, y],
+      //   initial: [ox, oy],
+      //   movement: [mx, my],
+      //   pinching,
+      //   cancel,
+      //   target,
+      //   currentTarget,
+      // }) => {
+      //   if (pinching) {
+      //     console.log("drag pinch");
+      //     return cancel();
+      //   }
+      //   // console.log(target, currentTarget);
+      //   // const arg = args.distance;
+      //   // console.log("drag", mx, my);
+      //   // console.log("move", mx, my);
+      //   // console.log("drag", fx, fy);
+      //   // console.log(getPlace(ox, oy));
+      //   const board = document.getElementById("board");
+      //   const zero = new DOMPoint(0, 0).matrixTransform(
+      //     (board as any).getScreenCTM().inverse()
+      //   );
+      //   const c = new DOMPoint(x, y).matrixTransform(
+      //     (board as any).getScreenCTM().inverse()
+      //   );
+      //   const o = new DOMPoint(ox, oy).matrixTransform(
+      //     (board as any).getScreenCTM().inverse()
+      //   );
+      //   // const move = new DOMPoint(arg[0], arg[1]);
+      //   const m = new DOMPoint(mx, my).matrixTransform(
+      //     (board as any).getScreenCTM().inverse()
+      //   );
+      //   const f = new DOMPoint(fx, fy).matrixTransform(
+      //     (board as any).getScreenCTM().inverse()
+      //   );
+      //   // console.log("pan", m.x - zero.x, m.y - zero.y);
+      //   // setTransform((t) => {
+      //   const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
+      //   // console.log(paras);
+      //   // console.log("pan", dx, dy, paras[3], paras[4]);
+      //   // console.log(board?.getAttribute("transform"));
+      //   // board?.setAttribute(
+      //   //   "transform",
+      //   //   `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
+      //   //     paras[3] + m.x - zero.x
+      //   //   } ${paras[4] + m.y - zero.y})`
+      //   // );
+      //   // console.log(transform);
+      //   setTransform(
+      //     `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
+      //       panRef.current![1] + m.x - zero.x
+      //     } ${panRef.current![2] + m.y - zero.y})`
+      //   );
+      // },
+      // onWheel: ({ event }) => {
+      //   const delta = event.deltaY > 0 ? 1.1 : 0.9;
+      //   const svg = document.getElementById("svg");
+      //   const p = new DOMPoint(event.clientX, event.clientY);
+      //   const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
+      //   zoom(sp.x, sp.y, delta);
+      // },
       onPinch: ({ event }) => {
         console.log("pinch");
       },
     },
     {
+      target: boardRef,
+      eventOptions: { passive: false },
       drag: { threshold: 10 },
       // drag: {
       //   from: () => {
@@ -272,6 +278,17 @@ function App() {
   //   );
   // }, []);
   // console.log("rendering");
+  useEffect(() => {
+    const handler = (e: any) => e.preventDefault();
+    document.addEventListener("gesturestart", handler);
+    document.addEventListener("gesturechange", handler);
+    document.addEventListener("gestureend", handler);
+    return () => {
+      document.removeEventListener("gesturestart", handler);
+      document.removeEventListener("gesturechange", handler);
+      document.removeEventListener("gestureend", handler);
+    };
+  }, []);
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       e.preventDefault();
@@ -579,9 +596,10 @@ function App() {
               id="board"
               className="touch-none"
               transform={transform}
+              ref={boardRef}
               // onWheel={handleWheel}
-              {...bind()}
-              // ref={boardRef}
+              // {...bind()}
+
               // onTouchMove={(e) => {
               //   console.log("touchmove", e.touches[0].clientX);
               // }}
