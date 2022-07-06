@@ -59,7 +59,7 @@ function App() {
       (GRID * dimension[1]) / 2
     }) translate(0,0)`
   );
-  const panRef = React.useRef<[boolean, number, number]>();
+  const panRef = React.useRef<[number, number, number]>();
   const boardRef = React.useRef<any>(null);
   // const [transform, setTransform] = React.useState("matrix(1,0,0,1,0,0)");
   const [current, setCurrent] = React.useState<Dot>(["rect", "blue-light"]);
@@ -67,7 +67,7 @@ function App() {
   const [mode, setMode] = React.useState<ModeType>(ModeType.EDIT);
   const [{ used, board }, dispatch] = useBuild();
   const [selected, setSelected] = React.useState<Selected>([]);
-  // const [dragging, setdragging] = React.useState(false);
+  const [log, setLog] = React.useState<string[]>([]);
   const [usedCount, setUsedCount] = React.useState<
     Array<[string, string, number]>
   >([]);
@@ -76,10 +76,10 @@ function App() {
       const board = document.getElementById("board");
       let p = new DOMPoint(x, y);
       p = p.matrixTransform((board as any).getScreenCTM().inverse());
-      console.log(p.x, p.y);
+      // console.log(p.x, p.y);
       const j = Math.floor(p.x / GRID),
         i = Math.floor(p.y / GRID);
-      console.log("coordinate", i, j);
+      // console.log("coordinate", i, j);
       return i * dimension[0] + j;
     },
     [dimension]
@@ -166,97 +166,125 @@ function App() {
   }
   const bind = useGesture(
     {
-      onPointerUp: ({ event }) => {
-        // console.log(args);
+      onPointerUp: ({ event, pinching }) => {
         console.log("up", panRef.current![0]);
-        if (panRef.current![0]) {
-          panRef.current![0] = false;
+        setLog((l) => [...l, `up ${panRef.current![0]}`]);
+        if (panRef.current![0] > 0) {
+          panRef.current![0] = panRef.current![0] - 1;
           return;
         }
         const place = getPlace(event.clientX, event.clientY);
         handlePress(place);
       },
-      // onDragStart: () => {
-      //   console.log("drag start");
-      //   const [_, x, y] = panRef.current!;
-      //   panRef.current! = [true, x, y];
-      // },
-      // onDragEnd: () => {
-      //   console.log("drag end");
-      //   const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
-      //   panRef.current = [true, paras[3], paras[4]];
-      // },
-      // onDrag: ({
-      //   offset: [fx, fy],
-      //   xy: [x, y],
-      //   initial: [ox, oy],
-      //   movement: [mx, my],
-      //   pinching,
-      //   cancel,
-      //   target,
-      //   currentTarget,
-      // }) => {
-      //   if (pinching) {
-      //     console.log("drag pinch");
-      //     return cancel();
-      //   }
-      //   // console.log(target, currentTarget);
-      //   // const arg = args.distance;
-      //   // console.log("drag", mx, my);
-      //   // console.log("move", mx, my);
-      //   // console.log("drag", fx, fy);
-      //   // console.log(getPlace(ox, oy));
-      //   const board = document.getElementById("board");
-      //   const zero = new DOMPoint(0, 0).matrixTransform(
-      //     (board as any).getScreenCTM().inverse()
-      //   );
-      //   const c = new DOMPoint(x, y).matrixTransform(
-      //     (board as any).getScreenCTM().inverse()
-      //   );
-      //   const o = new DOMPoint(ox, oy).matrixTransform(
-      //     (board as any).getScreenCTM().inverse()
-      //   );
-      //   // const move = new DOMPoint(arg[0], arg[1]);
-      //   const m = new DOMPoint(mx, my).matrixTransform(
-      //     (board as any).getScreenCTM().inverse()
-      //   );
-      //   const f = new DOMPoint(fx, fy).matrixTransform(
-      //     (board as any).getScreenCTM().inverse()
-      //   );
-      //   // console.log("pan", m.x - zero.x, m.y - zero.y);
-      //   // setTransform((t) => {
-      //   const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
-      //   // console.log(paras);
-      //   // console.log("pan", dx, dy, paras[3], paras[4]);
-      //   // console.log(board?.getAttribute("transform"));
-      //   // board?.setAttribute(
-      //   //   "transform",
-      //   //   `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
-      //   //     paras[3] + m.x - zero.x
-      //   //   } ${paras[4] + m.y - zero.y})`
-      //   // );
-      //   // console.log(transform);
-      //   setTransform(
-      //     `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
-      //       panRef.current![1] + m.x - zero.x
-      //     } ${panRef.current![2] + m.y - zero.y})`
-      //   );
-      // },
-      // onWheel: ({ event }) => {
-      //   const delta = event.deltaY > 0 ? 1.1 : 0.9;
-      //   const svg = document.getElementById("svg");
-      //   const p = new DOMPoint(event.clientX, event.clientY);
-      //   const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
-      //   zoom(sp.x, sp.y, delta);
-      // },
-      onPinch: ({ event }) => {
-        console.log("pinch");
+      onDragStart: ({ pinching, cancel }) => {
+        if (pinching) {
+          cancel();
+          setLog((l) => [...l, "cancel drag " + panRef.current![0]]);
+          return;
+        }
+        console.log("drag start", panRef.current![0]);
+        setLog((l) => [...l, "drag start " + panRef.current![0]]);
+        // const [_, x, y] = panRef.current!;
+        // panRef.current![0] = 1;
+      },
+      onDragEnd: ({ canceled }) => {
+        // if (canceled) return;
+        console.log("drag end");
+        const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
+        panRef.current = [1, paras[3], paras[4]];
+        setLog((l) => [...l, "drag end " + panRef.current![0]]);
+      },
+      onDrag: ({
+        offset: [fx, fy],
+        xy: [x, y],
+        initial: [ox, oy],
+        movement: [mx, my],
+        pinching,
+        cancel,
+        touches,
+        target,
+        currentTarget,
+      }) => {
+        if (log[log.length - 1] !== "drag") setLog((l) => [...l, "drag"]);
+        // console.log(target, currentTarget);
+        // const arg = args.distance;
+        // console.log("drag", mx, my);
+        // console.log("move", mx, my);
+        // console.log("drag", fx, fy);
+        // console.log(getPlace(ox, oy));
+        const board = document.getElementById("board");
+        const zero = new DOMPoint(0, 0).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        const c = new DOMPoint(x, y).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        const o = new DOMPoint(ox, oy).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        // const move = new DOMPoint(arg[0], arg[1]);
+        const m = new DOMPoint(mx, my).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        const f = new DOMPoint(fx, fy).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        // console.log("pan", m.x - zero.x, m.y - zero.y);
+        // setTransform((t) => {
+        const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
+        // console.log(paras);
+        // console.log("pan", dx, dy, paras[3], paras[4]);
+        // console.log(board?.getAttribute("transform"));
+        // board?.setAttribute(
+        //   "transform",
+        //   `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
+        //     paras[3] + m.x - zero.x
+        //   } ${paras[4] + m.y - zero.y})`
+        // );
+        // console.log(transform);
+        setTransform(
+          `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
+            panRef.current![1] + m.x - zero.x
+          } ${panRef.current![2] + m.y - zero.y})`
+        );
+      },
+      onWheel: ({ event }) => {
+        const delta = event.deltaY > 0 ? 1.1 : 0.9;
+        const svg = document.getElementById("svg");
+        const p = new DOMPoint(event.clientX, event.clientY);
+        const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
+        zoom(sp.x, sp.y, delta);
+      },
+      onPinch: ({ event, movement: [my], delta: [dy], first }) => {
+        if (log[log.length - 1] !== "pinch") setLog((l) => [...l, "pinch"]);
+        // if (dy < 10 || dy > -10) return;
+        const delta = dy < 0 ? 1.1 : 0.9;
+        const box = document.getElementById("svg")!.getBoundingClientRect();
+        const x = (box!.left + box!.right) / 2;
+        const y = (box!.top + box!.bottom) / 2;
+        const p = new DOMPoint(x, y);
+        // const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
+        // setLog(["pinch", dy, panRef.current![0]]);
+        // setLog(["pinch ", sp.x, +sp.y]);
+        zoom(x, y, delta);
+      },
+      onPinchStart: () => {
+        setLog((l) => [...l, "pinch start " + panRef.current![0]]);
+        // setLog(["pinchend", 0, panRef.current![0]]);
+      },
+      onPinchEnd: () => {
+        panRef.current![0] = 2;
+        setLog((l) => [...l, "pinch end " + panRef.current![0]]);
       },
     },
     {
+      // bounds: boardRef,
       target: boardRef,
+      // pointer: { touch: true },
+      enabled: mode === ModeType.EDIT,
       eventOptions: { passive: false },
       drag: { threshold: 10 },
+      // pinch: { pointer: { touch: true } },
       // drag: {
       //   from: () => {
       //     console.log("from called");
@@ -279,15 +307,23 @@ function App() {
   // }, []);
   // console.log("rendering");
   useEffect(() => {
-    const handler = (e: any) => e.preventDefault();
-    document.addEventListener("gesturestart", handler);
-    document.addEventListener("gesturechange", handler);
-    document.addEventListener("gestureend", handler);
-    return () => {
-      document.removeEventListener("gesturestart", handler);
-      document.removeEventListener("gesturechange", handler);
-      document.removeEventListener("gestureend", handler);
-    };
+    // boardRef.current!.addEventListener("touchmove", function (e: any) {
+    //   setLog(e.touches.length);
+    // });
+    // [
+    //   "wheel",
+    //   "touchstart",
+    //   "touchmove",
+    //   "touchend",
+    //   "touchcancel",
+    //   "gesturestart",
+    //   "gesturechange",
+    //   "gestureend",
+    // ].forEach((eventName) => {
+    //   boardRef.current!.addEventListener(eventName, function () {
+    //     console.log(eventName);
+    //   });
+    // });
   }, []);
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -305,7 +341,7 @@ function App() {
     //     (GRID * dimension[1]) / 2
     //   }) translate(0,0)`
     // );
-    panRef.current = [false, 0, 0];
+    panRef.current = [0, 0, 0];
     document.body.addEventListener("keydown", handleKey);
     return () => {
       document.body.removeEventListener("keydown", handleKey);
@@ -331,86 +367,89 @@ function App() {
   return (
     <div className="App bg-cyan-300 ">
       <Defs />
+      <div className="overflow-visible z-50 fixed right-0 bottom-0">
+        {log.map((l, i) => (
+          <p key={i.toString()}>{l}</p>
+        ))}
+      </div>
       <div className="container h-screen p-4 lg:mx-auto grid grid-cols-2 md-layout">
-        <svg
-          className="m-1 p-2 bg-gray-100 rounded-lg "
-          viewBox={`0 0 ${GRID} ${GRID}`}
-          onClick={rotateCurrent}
-        >
-          <use
-            href={"#" + current[0]}
-            className={`fill-lego-${current[1]} w-full h-full`}
-            transform={`rotate(${current.length > 2 ? current[2]! * 90 : 0} ${
-              GRID / 2
-            } ${GRID / 2}) `}
-          />
-        </svg>
-        <div className=" m-1 flex justify-between rounded-lg ">
-          <div className="flex flex-col grow rounded-lg items-start bg-gray-800 p-1">
-            <div className="flex basis-1/2 max-w-full">
-              {SHAPES.map((shape) => (
+        <div className="m-1 p-2 bg-gray-100 rounded-lg">
+          <svg viewBox={`0 0 ${GRID} ${GRID}`} onClick={rotateCurrent}>
+            <use
+              href={"#" + current[0]}
+              className={`fill-lego-${current[1]} w-full h-full`}
+              transform={`rotate(${current.length > 2 ? current[2]! * 90 : 0} ${
+                GRID / 2
+              } ${GRID / 2}) `}
+            />
+          </svg>
+        </div>
+        <div className=" m-1 p-1 flex flex-col justify-between rounded-lg bg-gray-800">
+          {/* <div className="flex flex-col grow rounded-lg items-start bg-gray-800 p-1"> */}
+          <div className="flex h-1/2">
+            {SHAPES.map((shape) => (
+              <svg
+                key={shape}
+                className="h-full p-0.5 "
+                viewBox={`0 0 ${GRID} ${GRID}`}
+                onClick={() => {
+                  HASROTATE.includes(shape)
+                    ? setCurrent([shape, current[1], 0])
+                    : setCurrent([shape, current[1]]);
+                }}
+              >
+                <use
+                  href={"#" + shape}
+                  className={`fill-lego-${current[1]} w-full h-full`}
+                />
+              </svg>
+            ))}
+          </div>
+          <div className="flex h-1/2 max-w-full ">
+            {Object.keys(DOTCOLORS).map((_color) => {
+              const color = _color.slice(5);
+              return mode === ModeType.FILL || mode === ModeType.MULTIFILL ? (
+                <div
+                  key={color}
+                  className={`h-full p-0.5 ${
+                    color === curColor ? "scale-125" : ""
+                  } hover:scale-125`}
+                  onClick={() => setCurColor(color)}
+                >
+                  <MdWaterDrop
+                    className={`fill-lego-${color} w-full h-full `}
+                  />
+                </div>
+              ) : (
                 <svg
-                  key={shape}
+                  key={color}
                   className="h-full p-0.5"
                   viewBox={`0 0 ${GRID} ${GRID}`}
                   onClick={() => {
-                    HASROTATE.includes(shape)
-                      ? setCurrent([shape, current[1], 0])
-                      : setCurrent([shape, current[1]]);
+                    HASROTATE.includes(current[0])
+                      ? setCurrent([current[0], color, 0])
+                      : setCurrent([current[0], color]);
                   }}
                 >
                   <use
-                    href={"#" + shape}
-                    className={`fill-lego-${current[1]} w-full h-full`}
+                    href={current ? "#" + current[0] : "#rect"}
+                    className={`fill-lego-${color} w-full h-full`}
+                    transform={`rotate(${
+                      current.length > 2 ? current[2]! * 90 : 0
+                    } ${GRID / 2} ${GRID / 2}) `}
                   />
                 </svg>
-              ))}
-            </div>
-            <div className="flex basis-1/2 max-w-full ">
-              {Object.keys(DOTCOLORS).map((_color) => {
-                const color = _color.slice(5);
-                return mode === ModeType.FILL || mode === ModeType.MULTIFILL ? (
-                  <div
-                    key={color}
-                    className={`h-full p-0.5 ${
-                      color === curColor ? "scale-125" : ""
-                    } hover:scale-125`}
-                    onClick={() => setCurColor(color)}
-                  >
-                    <MdWaterDrop
-                      className={`fill-lego-${color} w-full h-full `}
-                    />
-                  </div>
-                ) : (
-                  <svg
-                    key={color}
-                    className="h-full p-0.5"
-                    viewBox={`0 0 ${GRID} ${GRID}`}
-                    onClick={() => {
-                      HASROTATE.includes(current[0])
-                        ? setCurrent([current[0], color, 0])
-                        : setCurrent([current[0], color]);
-                    }}
-                  >
-                    <use
-                      href={current ? "#" + current[0] : "#rect"}
-                      className={`fill-lego-${color} w-full h-full`}
-                      transform={`rotate(${
-                        current.length > 2 ? current[2]! * 90 : 0
-                      } ${GRID / 2} ${GRID / 2}) `}
-                    />
-                  </svg>
-                );
-              })}
-            </div>
+              );
+            })}
           </div>
+          {/* </div> */}
           {mode === ModeType.DROP && (
             <div className="flex mx-1 p-2 justify-center items-center bg-red-500 hover:bg-white rounded-lg">
               <MdOutlineDeleteForever className="w-full h-full hover:fill-red-500" />
             </div>
           )}
         </div>
-        <div className="w-full flex flex-col gap-y-1 mt-1">
+        <div className="w-full flex flex-col gap-y-1 mt-1 overflow-y-auto">
           <div className="rounded-lg bg-lego-yellow grid  grid-cols-2  justify-center items-center [&>div]:menu-div [&>div>svg]:menu-icon">
             <div
               className={
@@ -597,6 +636,10 @@ function App() {
               className="touch-none"
               transform={transform}
               ref={boardRef}
+              // onClick={(e) => {
+              //   const place = getPlace(e.clientX, e.clientY);
+              //   handlePress(place);
+              // }}
               // onWheel={handleWheel}
               // {...bind()}
 

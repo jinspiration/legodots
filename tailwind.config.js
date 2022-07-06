@@ -7,6 +7,9 @@ module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      screens: {
+        "real-hover": { raw: "(hover: hover)" },
+      },
       colors: {
         ...BOARDCOLORS,
         ...DOTCOLORS,

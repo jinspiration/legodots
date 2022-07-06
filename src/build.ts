@@ -49,7 +49,6 @@ function reducer(state: State, action: Action) {
         place in state.board
           ? state.board[place][0] + "." + state.board[place][1]
           : "";
-      console.log(key, "/", _key);
       if (
         key === _key &&
         HASROTATE.includes(current[0]) &&
@@ -78,7 +77,7 @@ function reducer(state: State, action: Action) {
           board: rest,
         };
       }
-      console.log("placing", current);
+      // console.log("placing", current);
       // place current
       return {
         used: {
@@ -102,9 +101,9 @@ function reducer(state: State, action: Action) {
 
     case ActionType.FILL:
       [place, curColor] = action.payload;
-      key = state.board[place][0] + "." + curColor;
-      _key = state.board[place][0] + "." + state.board[place][1];
-      if (place in state.board && key !== _key) {
+      if (place in state.board && state.board[place][0] !== curColor) {
+        key = state.board[place][0] + "." + curColor;
+        _key = state.board[place][0] + "." + state.board[place][1];
         return {
           board: {
             ...state.board,
@@ -121,6 +120,26 @@ function reducer(state: State, action: Action) {
           },
         };
       } else return state;
+    // [place, curColor] = action.payload;
+    // key = state.board[place][0] + "." + curColor;
+    // _key = state.board[place][0] + "." + state.board[place][1];
+    // if (place in state.board && key !== _key) {
+    //   return {
+    //     board: {
+    //       ...state.board,
+    //       [place]: [
+    //         state.board[place][0],
+    //         curColor,
+    //         state.board[place][2],
+    //       ] as Dot,
+    //     },
+    //     used: {
+    //       ...state.used,
+    //       [key]: key in state.used ? state.used[key] + 1 : 1,
+    //       [_key]: state.used[_key] - 1,
+    //     },
+    //   };
+    // } else return state;
     default:
       return state;
   }
