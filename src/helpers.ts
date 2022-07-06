@@ -1,3 +1,4 @@
+import { transform } from "typescript";
 import { Board, Dot } from "./App";
 import { Selected } from "./control";
 

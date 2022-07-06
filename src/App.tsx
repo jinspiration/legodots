@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { createRef, RefObject, useCallback, useEffect } from "react";
 import {
   MdModeEdit,
   MdOutlineDeleteForever,
@@ -23,6 +23,7 @@ import { GRID, SHAPES, BOARDCOLORS, DOTCOLORS, HASROTATE } from "./meta.js";
 import useBuild, { ActionType } from "./build";
 import { smartSelect } from "./helpers";
 import { ModeType, Selected } from "./control";
+import { Handler, useGesture } from "@use-gesture/react";
 
 export type Dot = [string, string, number?];
 export type Board = { [key: number]: Dot };
@@ -52,20 +53,28 @@ function App() {
   const [viewBox, setViewBox] = React.useState(
     `0 0 ${GRID * dimension[0]} ${GRID * dimension[1]}`
   );
+  const [origin, setOrigin] = React.useState([0, 0]);
+  const [transform, setTransform] = React.useState(
+    `rotate(0 ${(GRID * dimension[0]) / 2} ${
+      (GRID * dimension[1]) / 2
+    }) translate(0,0)`
+  );
+  const panRef = React.useRef<[boolean, number, number]>();
+  // const [transform, setTransform] = React.useState("matrix(1,0,0,1,0,0)");
   const [current, setCurrent] = React.useState<Dot>(["rect", "blue-light"]);
   const [curColor, setCurColor] = React.useState<string>("blue-light");
   const [mode, setMode] = React.useState<ModeType>(ModeType.EDIT);
   const [{ used, board }, dispatch] = useBuild();
   const [selected, setSelected] = React.useState<Selected>([]);
-  const [droppable, setDroppable] = React.useState(false);
+  // const [dragging, setdragging] = React.useState(false);
   const [usedCount, setUsedCount] = React.useState<
     Array<[string, string, number]>
   >([]);
   const getPlace = useCallback(
     (x: number, y: number) => {
-      const svg = document.getElementById("board");
+      const board = document.getElementById("board");
       let p = new DOMPoint(x, y);
-      p = p.matrixTransform((svg as any).getScreenCTM().inverse());
+      p = p.matrixTransform((board as any).getScreenCTM().inverse());
       console.log(p.x, p.y);
       const j = Math.floor(p.x / GRID),
         i = Math.floor(p.y / GRID);
@@ -99,21 +108,170 @@ function App() {
         });
     }
   }
-  function handleZoom(e: React.WheelEvent): void {
+  function zoom(sx: number, sy: number, delta: number): void {
+    setViewBox((vb) => {
+      const [x, y, width, height] = vb.split(" ").map(Number);
+      const _viewBox = [
+        x - (sx - x) * (delta - 1),
+        y - (sy - y) * (delta - 1),
+        width * delta,
+        height * delta,
+      ].join(" ");
+      return _viewBox;
+    });
+  }
+  function rotate() {
+    const svg = document.getElementById("svg");
+    const board = document.getElementById("board");
+    const box = svg?.getBoundingClientRect();
+    const x = (box!.left + box!.right) / 2;
+    const y = (box!.top + box!.bottom) / 2;
+    const p = new DOMPoint(x, y);
+    const rc = p.matrixTransform((board as any).getScreenCTM().inverse());
+    // const paras = board!
+    //   .getAttribute("transform")!
+    //   .match(/-?\d+\.?\d*/g)!
+    //   .map(Number);
+    // board!.setAttribute(
+    //   "transform",
+    //   `rotate(${(paras[0] + 90) % 360} ${rc.x} ${rc.y}) translate(${paras[3]} ${
+    //     paras[4]
+    //   })`
+    // );
+    // return;
+    setTransform((t) => {
+      const paras = t.match(/-?\d+\.?\d*/g)!.map(Number);
+      return `rotate(${(paras[0] + 90) % 360} ${rc.x + paras[3]} ${
+        rc.y + paras[4]
+      }) translate(${paras[3]} ${paras[4]})`;
+    });
+  }
+  function pan(dx: number, dy: number): void {
+    setTransform((t) => {
+      const paras = t.match(/-?\d+\.?\d*/g)!.map(Number);
+      console.log("pan", dx, dy, paras[3], paras[4]);
+      return `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
+        paras[3] + dx
+      } ${paras[4] + dy})`;
+    });
+  }
+  function handleWheel(e: React.WheelEvent): void {
     // e.preventDefault();
     const delta = e.deltaY > 0 ? 1.1 : 0.9;
     const svg = document.getElementById("svg");
-    const [x, y, width, height] = viewBox.split(" ").map(Number);
     const p = new DOMPoint(e.clientX, e.clientY);
     const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
-    const _viewBox = [
-      x - (sp.x - x) * (delta - 1),
-      y - (sp.y - y) * (delta - 1),
-      width * delta,
-      height * delta,
-    ].join(" ");
-    setViewBox(_viewBox);
+    zoom(sp.x, sp.y, delta);
   }
+  const bind = useGesture(
+    {
+      onPointerUp: ({ event }) => {
+        // console.log(args);
+        console.log("up", panRef.current![0]);
+        if (panRef.current![0]) {
+          panRef.current![0] = false;
+          return;
+        }
+        const place = getPlace(event.clientX, event.clientY);
+        handlePress(place);
+      },
+      onDragStart: () => {
+        console.log("drag start");
+        const [_, x, y] = panRef.current!;
+        panRef.current! = [true, x, y];
+      },
+      onDragEnd: () => {
+        console.log("drag end");
+        const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
+        panRef.current = [true, paras[3], paras[4]];
+      },
+      onDrag: ({
+        offset: [fx, fy],
+        xy: [x, y],
+        initial: [ox, oy],
+        movement: [mx, my],
+        target,
+        currentTarget,
+      }) => {
+        // console.log(target, currentTarget);
+        // const arg = args.distance;
+        // console.log("drag", mx, my);
+        // console.log("move", mx, my);
+        // console.log("drag", fx, fy);
+        // console.log(getPlace(ox, oy));
+        const board = document.getElementById("board");
+        const zero = new DOMPoint(0, 0).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        const c = new DOMPoint(x, y).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        const o = new DOMPoint(ox, oy).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        // const move = new DOMPoint(arg[0], arg[1]);
+        const m = new DOMPoint(mx, my).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        const f = new DOMPoint(fx, fy).matrixTransform(
+          (board as any).getScreenCTM().inverse()
+        );
+        // console.log("pan", m.x - zero.x, m.y - zero.y);
+        // setTransform((t) => {
+        const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number) as number[];
+        // console.log(paras);
+        // console.log("pan", dx, dy, paras[3], paras[4]);
+        // console.log(board?.getAttribute("transform"));
+        // board?.setAttribute(
+        //   "transform",
+        //   `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
+        //     paras[3] + m.x - zero.x
+        //   } ${paras[4] + m.y - zero.y})`
+        // );
+        // console.log(transform);
+        setTransform(
+          `rotate(${paras[0]} ${paras[1]} ${paras[2]}) translate(${
+            panRef.current![1] + m.x - zero.x
+          } ${panRef.current![2] + m.y - zero.y})`
+        );
+        // });
+        // pan(m.x, m.y);
+        // pan(d.x, d.y);
+      },
+      onWheel: ({ event }) => {
+        const delta = event.deltaY > 0 ? 1.1 : 0.9;
+        const svg = document.getElementById("svg");
+        const p = new DOMPoint(event.clientX, event.clientY);
+        const sp = p.matrixTransform((svg as any).getScreenCTM().inverse());
+        zoom(sp.x, sp.y, delta);
+      },
+      onPinch: ({ event }) => {
+        console.log("pinch");
+      },
+    },
+    {
+      drag: { threshold: 10 },
+      // drag: {
+      //   from: () => {
+      //     console.log("from called");
+      //     const paras = transform.match(/-?\d+\.?\d*/g)!.map(Number);
+      //     return [paras[3], paras[4]];
+      //   },
+      // },
+    }
+  );
+  // const boardRef: RefObject<SVGGElement> = createRef();
+  // useEffect(() => {
+  //   document.body.addEventListener(
+  //     "touchmove",
+  //     function (event) {
+  //       event.preventDefault();
+  //       event.stopPropagation();
+  //     },
+  //     { passive: false }
+  //   );
+  // }, []);
+  // console.log("rendering");
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       e.preventDefault();
@@ -123,6 +281,14 @@ function App() {
           break;
       }
     };
+    // const board = document.getElementById("board");
+    // board!.setAttribute(
+    //   "transform",
+    //   `rotate(0 ${(GRID * dimension[0]) / 2} ${
+    //     (GRID * dimension[1]) / 2
+    //   }) translate(0,0)`
+    // );
+    panRef.current = [false, 0, 0];
     document.body.addEventListener("keydown", handleKey);
     return () => {
       document.body.removeEventListener("keydown", handleKey);
@@ -305,7 +471,7 @@ function App() {
                 }}
               />
             </div>
-            <div>
+            <div onClick={rotate}>
               <MdOutlineRotate90DegreesCcw />
             </div>
             <div>
@@ -398,32 +564,34 @@ function App() {
           </div>
           {/* <SidePanel used={used} current={current} setCurrent={setCurrent} /> */}
         </div>
-        <div className="m-2 overflow-hidden" onWheel={handleZoom}>
+        <div className="m-2 overflow-hidden">
           <svg
             id="svg"
             viewBox={viewBox}
-            // viewBox={`0 0 ${dimension[0] * GRID} ${dimension[1] * GRID}`}
             preserveAspectRatio="xMidYMid meet"
-            className={`bg-gray-200 rounded-lg p-4 h-full w-full`}
+            className={`bg-gray-200 rounded-lg p-4 h-full w-full touch-none`}
+
+            // onDrag={(e) => {
+            //   console.log(e.clientX);
+            // }}
           >
             <g
               id="board"
-              // transform={`translate(400,400) rotate(90 ${
-              //   (dimension[0] * GRID) / 2
-              // } ${(dimension[1] * GRID) / 2})`}
+              className="touch-none"
+              transform={transform}
+              // onWheel={handleWheel}
+              {...bind()}
+              // ref={boardRef}
+              // onTouchMove={(e) => {
+              //   console.log("touchmove", e.touches[0].clientX);
+              // }}
+
+              // onMouseMove={() => console.log("mouse down")}
+              // onDrag={() => console.log("dragging")}
             >
               <rect
                 x="0"
                 y="0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const place = getPlace(e.clientX, e.clientY);
-                  handlePress(place);
-                  // dispatch({
-                  //   type: ActionType.EDIT,
-                  //   payload: [current, place],
-                  // });
-                }}
                 className="fill-lego-blue"
                 width={dimension[0] * GRID}
                 height={dimension[1] * GRID}
@@ -431,15 +599,15 @@ function App() {
               <rect
                 x="0"
                 y="0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const place = getPlace(e.clientX, e.clientY);
-                  handlePress(place);
-                  // dispatch({
-                  //   type: ActionType.EDIT,
-                  //   payload: [current, place],
-                  // });
-                }}
+                // onClick={(e) => {
+                //   e.preventDefault();
+                //   const place = getPlace(e.clientX, e.clientY);
+                //   handlePress(place);
+                //   // dispatch({
+                //   //   type: ActionType.EDIT,
+                //   //   payload: [current, place],
+                //   // });
+                // }}
                 className="bg-lego-blue"
                 fill="url(#pattern)"
                 width={dimension[0] * GRID}
@@ -454,9 +622,9 @@ function App() {
                   // <>
                   <use
                     key={_place}
-                    onClick={() => {
-                      handlePress(place);
-                    }}
+                    // onClick={() => {
+                    //   handlePress(place);
+                    // }}
                     // onClick={(e) => {
                     //   e.preventDefault();
                     //   if (mode === ModeType.EDIT) {
