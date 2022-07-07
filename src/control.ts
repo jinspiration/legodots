@@ -5,6 +5,7 @@ import { HASROTATE } from "./meta";
 export type Selected = Array<[number, Dot]>;
 
 export enum ModeType {
+  LANDING = "LANDING",
   EDIT = "edit",
   DELETE = "delete",
   SELECT = "select",

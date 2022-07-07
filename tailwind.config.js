@@ -2,7 +2,14 @@ const { BOARDCOLORS, DOTCOLORS } = require("./src/meta");
 
 /** @type {import('tailwindcss').Config} */
 
-const fillLegoColors = Object.keys(DOTCOLORS).map((c) => "fill-" + c);
+const fillLegoColors = [
+  ...Object.keys(DOTCOLORS),
+  ...Object.keys(BOARDCOLORS),
+].map((c) => "fill-" + c);
+const bgLegoColors = [
+  ...Object.keys(DOTCOLORS),
+  ...Object.keys(BOARDCOLORS),
+].map((c) => "bg-" + c);
 module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
@@ -16,6 +23,9 @@ module.exports = {
       },
     },
   },
-  safelist: [...fillLegoColors],
-  plugins: [],
+  safelist: [...fillLegoColors, ...bgLegoColors],
+  plugins: [require("daisyui")],
+  daisyui: {
+    // themes: ["retro", "dark"],
+  },
 };

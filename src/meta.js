@@ -3,6 +3,11 @@ const SHAPES = ["rect", "circle", "arc"];
 const HASROTATE = ["arc"];
 const BOARDCOLORS = {
   "lego-blue": "#006CB7",
+  "lego-black": "#151515",
+  "lego-blue-bright": "#189E9F",
+  "lego-yellow-cool": "#FFF579",
+  "lego-orange-bright": "#F57D20",
+  "lego-purple-light": "#F6ADCD",
 };
 const DOTCOLORS = {
   "lego-blue-light": "#00BED3",

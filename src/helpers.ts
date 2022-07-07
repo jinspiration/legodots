@@ -1,8 +1,8 @@
 import { transform } from "typescript";
-import { Board, Dot } from "./App";
+import { BoardData, Dot } from "./App";
 import { Selected } from "./control";
 
-export const smartSelect = (board: Board, r: number, place: number) => {
+export const smartSelect = (board: BoardData, r: number, place: number) => {
   if (board[place][0] === "circle") {
     const select: [number, Dot] = [place, board[place]];
     return [select];

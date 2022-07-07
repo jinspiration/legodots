@@ -4,15 +4,12 @@
 
 @layer components {
   .menu-div {
-    @apply rounded-md m-1 overflow-hidden ring-2  hover:ring-red-500;
+    @apply rounded-md m-1 overflow-hidden ring-2 ring-secondary hover:ring-success real-hover:hover:bg-success;
+  }
+  .menu-div-selected {
+    @apply bg-success ring-success !important;
   }
   .menu-icon {
-    @apply w-full h-full p-1 fill-black hover:fill-white real-hover:hover:bg-black;
-  }
-}
-@layer utilities {
-  .md-layout {
-    grid-template-columns: 6rem minmax(0, 1fr);
-    grid-template-rows: 6rem minmax(0, 1fr);
+    @apply w-full h-full p-1 fill-secondary hover:fill-success-content real-hover:hover:bg-success;
   }
 }

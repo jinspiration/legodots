@@ -1,11 +1,12 @@
 import { useReducer, useState } from "react";
-import { Board, Dot, History } from "./App";
+import { BoardData, Dot, History } from "./App";
 import { HASROTATE } from "./meta";
 
 export type Used = { [key: string]: number };
 export type State = {
   used: Used;
-  board: Board;
+  board: BoardData;
+  picked?: Array<Dot>;
 };
 export enum ActionType {
   LOAD = "load",
@@ -15,13 +16,13 @@ export enum ActionType {
   REMOVE = "remove",
 }
 type Action =
-  | { type: ActionType.LOAD; payload: Board }
+  | { type: ActionType.LOAD; payload: BoardData }
   | { type: ActionType.EDIT; payload: [Dot, number] }
   | { type: ActionType.DELETE; payload: number }
   | { type: ActionType.FILL; payload: [number, string] }
   | { type: ActionType.REMOVE; payload: number };
 function reducer(state: State, action: Action) {
-  let board: Board = {},
+  let board: BoardData = {},
     used: Used = {},
     current: Dot,
     place: number,
