@@ -9,6 +9,7 @@ export type State = {
   picked?: Array<Dot>;
 };
 export enum ActionType {
+  RESET = "reset",
   LOAD = "load",
   EDIT = "edit",
   DELETE = "delete",
@@ -16,6 +17,7 @@ export enum ActionType {
   REMOVE = "remove",
 }
 type Action =
+  | { type: ActionType.RESET }
   | { type: ActionType.LOAD; payload: BoardData }
   | { type: ActionType.EDIT; payload: [Dot, number] }
   | { type: ActionType.DELETE; payload: number }
@@ -30,6 +32,8 @@ function reducer(state: State, action: Action) {
     key: string,
     _key: string;
   switch (action.type) {
+    case ActionType.RESET:
+      return { used: {}, board: {} };
     case ActionType.LOAD:
       used = {};
       Object.values(action.payload).forEach(([shape, color]) => {

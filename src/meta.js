@@ -10,12 +10,14 @@ const BOARDCOLORS = {
   "lego-purple-light": "#F6ADCD",
 };
 const DOTCOLORS = {
+  "lego-blue": "#006CB7",
   "lego-blue-light": "#00BED3",
   "lego-green": "#00A850",
   "lego-yellow": "#FFCD03",
   "lego-lilac": "#BCA6D0",
   "lego-coral": "#F96C62",
   "lego-white": "#F3F1EF",
+  "lego-black": "#151515",
 };
 
 module.exports = { GRID, SHAPES, BOARDCOLORS, DOTCOLORS, HASROTATE };

@@ -6,9 +6,10 @@ import { GRID } from "./meta";
 
 const Board: React.FC<{
   board: BoardData;
+  boardColor: string;
   dimension: [number, number];
   handlePress: (place: number) => void;
-}> = ({ board, dimension, handlePress }) => {
+}> = ({ board, boardColor, dimension, handlePress }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const boardRef = useRef<SVGSVGElement>(null);
 
@@ -180,14 +181,14 @@ const Board: React.FC<{
           <rect
             x="0"
             y="0"
-            className="fill-lego-blue"
+            className={"fill-" + boardColor}
             width={dimension[0] * GRID}
             height={dimension[1] * GRID}
           />
           <rect
             x="0"
             y="0"
-            className="bg-lego-blue"
+            className={"bg-" + boardColor}
             fill="url(#pattern)"
             width={dimension[0] * GRID}
             height={dimension[1] * GRID}
@@ -202,7 +203,7 @@ const Board: React.FC<{
               <use
                 key={_place}
                 href={"#" + shape}
-                className={`fill-lego-${color} hover:fill-white`}
+                className={"fill-lego-" + color}
                 transform={`translate(${x * GRID},${y * GRID}) rotate(${
                   (rotate ?? 0) * 90
                 } ${GRID / 2} ${GRID / 2}) `}

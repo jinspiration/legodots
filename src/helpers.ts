@@ -1,7 +1,7 @@
 import { transform } from "typescript";
 import { BoardData, Dot } from "./App";
-import { Selected } from "./control";
-
+// import { Selected } from "./store/control";
+type Selected = Array<[number, Dot]>;
 export const smartSelect = (board: BoardData, r: number, place: number) => {
   if (board[place][0] === "circle") {
     const select: [number, Dot] = [place, board[place]];
