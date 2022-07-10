@@ -1,0 +1,26 @@
+{
+  "GRID": 50,
+  "DOTS": {
+    "rect": { "rotate": [0] },
+    "circle": { "rotate": [0] },
+    "arc": { "rotate": [0, 90, 180, 270] }
+  },
+  "BOARDCOLORS": {
+    "lego-blue": "#006CB7",
+    "lego-black": "#151515",
+    "lego-blue-bright": "#189E9F",
+    "lego-yellow-cool": "#FFF579",
+    "lego-orange-bright": "#F57D20",
+    "lego-purple-light": "#F6ADCD"
+  },
+  "DOTCOLORS": {
+    "lego-blue": "#006CB7",
+    "lego-blue-light": "#00BED3",
+    "lego-green": "#00A850",
+    "lego-yellow": "#FFCD03",
+    "lego-lilac": "#BCA6D0",
+    "lego-coral": "#F96C62",
+    "lego-white": "#F3F1EF",
+    "lego-black": "#151515"
+  }
+}
