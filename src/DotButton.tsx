@@ -1,5 +1,4 @@
-import { DOTS } from "./App";
-import { GRID } from "./meta.json";
+import { DOTS, GRID } from "./meta";
 import React from "react";
 
 interface Prop {
@@ -8,7 +7,7 @@ interface Prop {
   rotate: number;
 }
 
-const LegoIcon: React.FC<Prop> = ({ shape, color, rotate }) => {
+const DotButton: React.FC<Prop> = ({ shape, color, rotate }) => {
   return (
     <svg
       className="w-full h-full"
@@ -24,4 +23,4 @@ const LegoIcon: React.FC<Prop> = ({ shape, color, rotate }) => {
     </svg>
   );
 };
-export default React.memo(LegoIcon);
+export default React.memo(DotButton);

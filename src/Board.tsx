@@ -1,10 +1,9 @@
 import { useGesture } from "@use-gesture/react";
 import React, { useCallback, useEffect, useRef } from "react";
 import { MdMyLocation } from "react-icons/md";
-import { DOTS, GRID } from "./meta.json";
+import { GRID } from "./meta";
 import useStore from "./store";
 
-const PAINT = Object.keys(DOTS);
 const Board: React.FC<{}> = ({}) => {
   const board = useStore((state) => state.board);
   const boardColor = useStore((state) => state.color);
@@ -16,7 +15,6 @@ const Board: React.FC<{}> = ({}) => {
   const panRef = React.useRef<[number, number, number]>([0, 0, 0]);
 
   // const [log, setLog] = React.useState<string[]>([]);
-  console.log("board rendered");
 
   function zoom(delta: number): void {
     if (svgRef.current === null) return;

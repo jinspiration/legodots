@@ -1,6 +1,6 @@
 import create, { SetState } from "zustand";
 // import { SetState } from "zustand";
-// import { Dot } from "./App";
+import { SHAPES } from "./meta";
 import { devtools, persist } from "zustand/middleware";
 import produce, {
   produceWithPatches,
@@ -18,19 +18,21 @@ export enum ModeType {
   LANDING = "landing",
   EDIT = "edit",
   DELETE = "delete",
+  FILL = "fill",
   SELECT = "select",
   DROP = "drop",
-  FILL = "fill",
 }
+type UsedCount = [string, number][];
 
 interface Store {
   current: Dot;
   selected: number[];
   mode: ModeType;
-  board: Board;
   color: string;
   m: number;
   n: number;
+  board: Board;
+  used: UsedCount;
   // start: (color: string, m: number, n: number, board?: Board) => void;
   // setState: (
   //   partial: Store | Partial<Store> | ((state: Store) => Store | Partial<Store>)
@@ -47,11 +49,11 @@ const undoStack: Patch[][] = [];
 type mutator = (draft: Draft<Board>, ...args: any) => void;
 
 const recordBoard = (
-  board: Board,
+  state: Store,
   recipe: (draft: Draft<Board>) => void
 ): Board => {
   const [nextBoard, patches, inversePatches] = produceWithPatches(
-    board,
+    state.board,
     recipe
   );
   if (patches.length > 0) redoStack.push(patches);
@@ -66,27 +68,24 @@ const useStore = create<Store>()(
     current: ["rect", "blue-light", 0],
     selected: [],
     mode: ModeType.LANDING,
-    board: {},
     color: "blue-light",
     m: 0,
     n: 0,
+    board: {},
+    used: [],
     setState: set,
-    // setMode: (m: ModeType) => set((state) => ({ mode: m })),
-    // setCurrent: (c: Dot) => set((state) => ({ current: c })),
     press: (i: number, j: number) => {
       set((state) => {
         const key = i * state.m + j;
+        const name = state.current[0] + "|" + state.current[1];
         console.log("press", i, j, key);
-        // const isHold = state.board[key] && state.board[key][0] === "hold";
-        // const isBigarc = state.board[key] && state.board[key][0] === "bigarc";
-        // const exist = hold || place in state.board || mplace in state.board;
-        switch (state.mode) {
-          case ModeType.EDIT:
-            return {
-              board: recordBoard(state.board, (draft: Draft<Board>) => {
+        const delta: { [key: string]: number } = {};
+        const board =
+          state.mode === ModeType.EDIT
+            ? recordBoard(state, (draft: Draft<Board>) => {
                 if (state.current[0] === "bigarc") {
                   // if (state.board[key] || state.board[mkey]) return;
-                  return editBigArc(
+                  const success = editBigArc(
                     draft,
                     state.m,
                     state.n,
@@ -96,18 +95,24 @@ const useStore = create<Store>()(
                     state.current[1],
                     state.current[2]
                   );
+                  if (success) {
+                    delta[name] = (delta[name] ?? 0) + 1;
+                  }
+                  return;
                 }
                 if (!state.board[key]) {
                   draft[key] = [[key, ...state.current]];
-                  // draft[key] = [[key, ...state.current]];
+                  delta[name] = (delta[name] ?? 0) + 1;
                   return;
                 }
                 if (state.board[key].length === 1) {
                   if (
-                    draft[key][0].slice(1).join("") === state.current.join("")
-                  )
-                    return clearKey(draft, key);
-                  console.log(state.board[key][0], state.current);
+                    state.board[key][0].slice(1).join("") ===
+                    state.current.join("")
+                  ) {
+                    delta[name] = (delta[name] ?? 0) - 1;
+                    delete draft[key];
+                  }
                   if (
                     state.board[key][0][1] === "bigarc" &&
                     state.current[0] === "arc" &&
@@ -119,59 +124,99 @@ const useStore = create<Store>()(
                       state.current[1],
                       state.current[2],
                     ]);
+                    delta[name] = (delta[name] ?? 0) + 1;
                   }
                 }
-              }),
-            };
-          case ModeType.DELETE:
-            return {
-              board: recordBoard(state.board, (draft: Draft<Board>) => {
-                clearKey(draft, key);
-              }),
-            };
-          case ModeType.FILL:
-            return {
-              board: recordBoard(state.board, (draft: Draft<Board>) => {
+              })
+            : state.mode === ModeType.DELETE
+            ? recordBoard(state, (draft: Draft<Board>) => {
                 if (!draft[key]) return;
-                draft[key].forEach(([root, _, __, rotate]) => {
-                  Object.values(draft).forEach((dots) => {
-                    dots.forEach((dot) => {
-                      if (dot[0] === root && dot[3] === rotate) {
-                        dot[2] = state.current[1];
-                      }
-                    });
+                mutateKey(state.board, key, (k, idx) => {
+                  idx.forEach((i) => {
+                    if (SHAPES.includes(state.board[k][i][1])) {
+                      const _name =
+                        state.board[k][i][1] + "|" + state.board[k][i][2];
+                      delta[_name] = (delta[_name] ?? 0) - 1;
+                    }
+                  });
+                  draft[k] = state.board[k].filter(
+                    (_, i) => idx.indexOf(i) < 0
+                  );
+                  if (draft[k].length === 0) delete draft[k];
+                });
+              })
+            : state.mode === ModeType.FILL
+            ? recordBoard(state, (draft: Draft<Board>) => {
+                if (!draft[key]) return;
+                mutateKey(state.board, key, (k, idx) => {
+                  idx.forEach((i) => {
+                    if (SHAPES.includes(state.board[k][i][1])) {
+                      const _name =
+                        state.board[k][i][1] + "|" + state.board[k][i][2];
+                      const _newName =
+                        state.board[k][i][1] + "|" + state.current[1];
+                      delta[_name] = (delta[_name] ?? 0) - 1;
+                      delta[_newName] = (delta[_newName] ?? 0) + 1;
+                      draft[k][i][2] = state.current[1];
+                    }
                   });
                 });
-              }),
-            };
-          default:
-            console.log("default");
-            return {};
-        }
+              })
+            : state.mode === ModeType.SELECT
+            ? recordBoard(state, (draft: Draft<Board>) => {
+                console.log("SELECT not implemented yet");
+              })
+            : state.mode === ModeType.DROP
+            ? recordBoard(state, (draft: Draft<Board>) => {
+                console.log("DROP not implemented yet");
+              })
+            : {};
+        let used: UsedCount = state.used.map(([name, count]) => {
+          if (delta[name]) {
+            const deltaCnt = delta[name];
+            delete delta[name];
+            return [name, count + deltaCnt];
+          }
+          return [name, count];
+        });
+        Object.entries(delta).forEach(([name, count]) => {
+          used.push([name, count]);
+        });
+        used = used.filter(([name, count]) => count > 0);
+        used.sort((a, b) => b[1] - a[1]);
+        console.log("delta", delta);
+        console.log("used", used);
+        return { board, used };
       });
     },
   }))
 );
 
-const clearRoot = (draft: Draft<Board>, root: number, rotate: number) => {
-  Object.entries(draft).forEach(([key, dots]) => {
-    draft[key] = draft[key].filter(
-      ([rt, _, __, ro]) => rt !== root || ro !== rotate
-    );
-    if (draft[key].length === 0) delete draft[key];
+const mutateKey = (
+  board: Board,
+  key: number,
+  mutate: (key: string, idx: number[]) => void
+) => {
+  const toMutate: { [key: string]: number[] } = {};
+  board[key].forEach(([root, s, color, rotate]) => {
+    const shape = s === "curve" || s === "hold" ? "bigarc" : s;
+    Object.entries(board).forEach(([key, dots]) => {
+      dots.forEach(([_root, _shape, _, _rotate], i) => {
+        const match =
+          _shape === shape ||
+          (shape === "bigarc" && (_shape === "hold" || _shape === "curve"));
+        if (match && _root === root && _rotate === rotate) {
+          toMutate[key] ? toMutate[key].push(i) : (toMutate[key] = [i]);
+        }
+      });
+    });
+  });
+  Object.entries(toMutate).forEach(([key, idx]) => {
+    console.log("mutate called", key, idx);
+    mutate(key, idx);
   });
 };
-const clearKey = (draft: Draft<Board>, k: number) => {
-  if (!draft[k]) return;
-  const toClear: Array<[number, number]> = draft[k].map(
-    ([root, _, __, rotate]) => [root, rotate]
-  );
-  toClear.forEach(([root, rotate]) => {
-    clearRoot(draft, root, rotate);
-  });
-};
-
-const editBigArc: mutator = (
+const editBigArc = (
   draft: Draft<Board>,
   m: number,
   n: number,
@@ -208,16 +253,16 @@ const editBigArc: mutator = (
   });
   if (!placable) {
     console.log("not placable");
-    return;
+    return false;
   } else {
     console.log("placing", key, i, j, color, rotate);
-    // draft[key] = (draft[key] ?? []).concat([[key, "bigarc", color, rotate]]);
     bigarcRotateMap[rotate].forEach(([dx, dy, shape]) => {
       const ii: number = i + dx,
         jj: number = j + dy;
       const kk = ii * m + jj;
       draft[kk] = (draft[kk] ?? []).concat([[key, shape, color, rotate]]);
     });
+    return true;
   }
 };
 

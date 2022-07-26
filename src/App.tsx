@@ -28,6 +28,7 @@ import DotButton from "./DotButton";
 import StatusButton from "./StatusButton";
 // import { useBuild as useStore } from "./store/build";
 import useStore from "./store";
+import Used from "./Used";
 
 export const DOTS: { [key: string]: { size: number; rotate: number[] } } =
   meta.DOTS;
@@ -215,8 +216,9 @@ function App() {
               <MdOutlinePrint />
             </div>
           </div>
-          <div className="grid grid-cols-2 rounded-md">
-            {usedCount
+          {/* <div className="grid grid-cols-2 rounded-md"> */}
+          <Used />
+          {/* {usedCount
               .filter((d) => d[2] > 0)
               .map(([shape, color, occ], index) => (
                 <div
@@ -235,8 +237,8 @@ function App() {
                     <DotButton shape={shape} color={color} rotate={0} />
                   </div>
                 </div>
-              ))}
-          </div>
+              ))} */}
+          {/* </div> */}
           {/* </div> */}
         </div>
         {mode === ModeType.LANDING ? (

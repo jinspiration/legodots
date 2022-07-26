@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BOARDCOLORS, GRID } from "./meta.json";
+import { BOARDCOLORS, GRID } from "./meta";
 // import { useBuild } from "./store/build";
 import useStore, { ModeType } from "./store";
 const Landing: React.FC<{
