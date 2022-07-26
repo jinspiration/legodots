@@ -1,5 +1,6 @@
 import { DOTS } from "./App";
 import { GRID } from "./meta.json";
+import React from "react";
 
 interface Prop {
   shape: string;
@@ -23,4 +24,4 @@ const LegoIcon: React.FC<Prop> = ({ shape, color, rotate }) => {
     </svg>
   );
 };
-export default LegoIcon;
+export default React.memo(LegoIcon);

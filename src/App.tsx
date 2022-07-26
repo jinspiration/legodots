@@ -13,6 +13,7 @@ import {
   MdOutlineUndo,
   MdOutlineWaterDrop,
   MdOutlineWindow,
+  MdSettingsInputAntenna,
   MdWaterDrop,
 } from "react-icons/md";
 import { BsHandIndexThumb, BsArrowsMove } from "react-icons/bs";
@@ -23,7 +24,8 @@ import { ModeType, Dot } from "./store";
 import Board from "./Board";
 import Landing from "./Landing";
 // import useStore from "./store/control";
-import LegoIcon from "./LegoIcon";
+import DotButton from "./DotButton";
+import StatusButton from "./StatusButton";
 // import { useBuild as useStore } from "./store/build";
 import useStore from "./store";
 
@@ -74,114 +76,22 @@ const initBuild: BoardData = {
 };
 
 function App() {
-  // const curBoard = useStore((state) => state.curBoard);
-  // const setBoard = useStore((state) => state.setBoard);
   const current = useStore((state) => state.current);
   const mode = useStore((state) => state.mode);
-  const setMode = useStore((state) => state.setMode);
-  const setCurrent = useStore((state) => state.setCurrent);
-  // const [dimension, setDimensions] = React.useState<[number, number]>([8, 8]);
-  // const [boardColor, setBoardColor] = React.useState<string>("");
-  // const [current, setCurrent] = React.useState<Dot>(["rect", "blue-light"]);
-  // const [curColor, setCurColor] = React.useState<string>("blue-light");
-  // const [mode, setMode] = React.useState<ModeType>(ModeType.LANDING);
-  // const [{ used, board }, dispatch] = useBuild();
-  // const edit = useStore((state) => state.edit);
-  // const start = useStore((state) => state.start);
-  // const [selected, setSelected] = React.useState<Selected>([]);
+  const setState = useStore((state) => state.setState);
   const [usedCount, setUsedCount] = React.useState<
     Array<[string, string, number]>
   >([]);
-  // const chooseBoard = (m: number, n: number, color: string) => {
-  //   reset();
-  //   // dispatch({ type: ActionType.RESET });
-  //   setBoard([m, n, color]);
-  // };
-  // const getPlace = useCallback(
-  //   (x: number, y: number) => {
-  //     const board = document.getElementById("board");
-  //     let p = new DOMPoint(x, y);
-  //     p = p.matrixTransform((board as any).getScreenCTM().inverse());
-  //     // console.log(p.x, p.y);
-  //     const j = Math.floor(p.x / GRID),
-  //       i = Math.floor(p.y / GRID);
-  //     // console.log("coordinate", i, j);
-  //     return i * curBoard[1] + j;
-  //   },
-  //   [curBoard]
-  // );
-  function rotateCurrent() {
-    const rotate = DOTS[current[0]].rotate;
-    const ir = rotate.indexOf(current[2]);
-    setCurrent([current[0], current[1], rotate[(ir + 1) % rotate.length]]);
-  }
-  // function handlePress(i: number, j: number) {
-  //   switch (mode) {
-  //     case ModeType.EDIT:
-  //       return edit(i, j, current);
-  //     // return dispatch({
-  //     //   type: ActionType.EDIT,
-  //     //   payload: [current, place],
-  //     // });
-  //     // case ModeType.DELETE:
-  //     //   return dispatch({ type: ActionType.DELETE, payload: place });
-  //     // case ModeType.FILL:
-  //     //   return dispatch({
-  //     //     type: ActionType.FILL,
-  //     //     payload: [place, current[1]],
-  //     //   });
-  //   }
-  // }
 
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      e.preventDefault();
-      switch (e.key) {
-        case "r":
-          rotateCurrent();
-          break;
-      }
-    };
-    document.body.addEventListener("keydown", handleKey);
-    return () => {
-      document.body.removeEventListener("keydown", handleKey);
-    };
-  }, []);
   useEffect(() => {
     console.log("current", current);
   }, [current]);
-  // useEffect(() => {
-  //   const usedArray = Object.entries(used).map(([dot, occ]) => {
-  //     const [shape, color] = dot.split(".");
-  //     return [shape, color, occ] as [string, string, number];
-  //   });
-  //   usedArray.sort((a, b) => {
-  //     return b[2] - a[2];
-  //   });
-  //   setUsedCount(usedArray);
-  // }, [used]);
   return (
     <div className="App bg-base-100">
       <Defs />
       <div className="container h-screen p-4 lg:mx-auto grid grid-cols-[6rem_minmax(0,_1fr)] grid-rows-[6rem_minmax(0,_1fr)] [&>div]:rounded-lg gap-1">
-        <div className="p-2">
-          {mode === ModeType.FILL ? (
-            <div>
-              <MdWaterDrop
-                size={30}
-                className={`fill-lego-${current[1]} w-full h-full`}
-              />
-            </div>
-          ) : (
-            <div onClick={rotateCurrent}>
-              <LegoIcon
-                shape={current[0]}
-                color={current[1]}
-                rotate={current[2]}
-              />
-            </div>
-          )}
-        </div>
+        {/* status button */}
+        <StatusButton />
         <div className="grid grid-cols-3 gap-x-1">
           <div className="bg-neutral col-span-2 grid grid-rows-[3rem_3rem] auto-cols-[3rem] [&>*]:h-full [&>*]:w-full [&>*]:p-1 rounded-md overflow-x-auto">
             {Object.keys(DOTS).map((shape) => (
@@ -189,16 +99,22 @@ function App() {
                 key={shape}
                 className="row-start-1"
                 onClick={() =>
-                  setCurrent([
-                    shape,
-                    current[1],
-                    DOTS[shape].rotate.indexOf(current[2]) !== -1
-                      ? current[2]
-                      : 0,
-                  ])
+                  setState((state) => {
+                    if (state.mode === ModeType.LANDING) return {};
+                    return {
+                      current: [
+                        shape,
+                        state.current[1],
+                        DOTS[shape].rotate.indexOf(state.current[2]) !== -1
+                          ? state.current[2]
+                          : 0,
+                      ],
+                      mode: ModeType.EDIT,
+                    };
+                  })
                 }
               >
-                <LegoIcon shape={shape} color={current[1]} rotate={0} />
+                <DotButton shape={shape} color={current[1]} rotate={0} />
               </div>
             ))}
             {Object.keys(DOTCOLORS).map((_color) => {
@@ -207,7 +123,13 @@ function App() {
                 <div
                   key={color}
                   className="row-start-2"
-                  onClick={() => setCurrent([current[0], color, current[2]])}
+                  onClick={() =>
+                    setState((state) => {
+                      return {
+                        current: [state.current[0], color, state.current[2]],
+                      };
+                    })
+                  }
                 >
                   <MdWaterDrop
                     key={color}
@@ -219,11 +141,17 @@ function App() {
                 <div
                   key={color}
                   className="row-start-2"
-                  onClick={() => {
-                    setCurrent([current[0], color, current[2]]);
-                  }}
+                  onClick={() =>
+                    setState((state) => {
+                      if (state.mode === ModeType.LANDING) return {};
+                      return {
+                        current: [state.current[0], color, state.current[2]],
+                        mode: ModeType.EDIT,
+                      };
+                    })
+                  }
                 >
-                  <LegoIcon
+                  <DotButton
                     shape={current[0]}
                     color={color}
                     rotate={current[2]}
@@ -238,40 +166,30 @@ function App() {
           <div className="rounded-lg grid grid-cols-2  justify-center items-center [&>div]:menu-div [&>div>svg]:menu-icon">
             <div
               className={mode === ModeType.DELETE ? "menu-div-selected" : ""}
-              onClick={() => {
-                setMode(ModeType.DELETE);
-                // setSelected([]);
-              }}
+              onClick={() => setState({ mode: ModeType.DELETE, selected: [] })}
             >
               <MdOutlineEditOff />
             </div>
             <div
               className={mode === ModeType.EDIT ? "menu-div-selected" : ""}
-              onClick={() => {
-                setMode(ModeType.EDIT);
-                // setSelected([]);
-              }}
+              onClick={() => setState({ mode: ModeType.EDIT, selected: [] })}
             >
               <MdModeEdit />
             </div>
 
             <div
               className={mode === ModeType.FILL ? "menu-div-selected" : ""}
-              onClick={() => {
-                setMode(ModeType.FILL);
-                // setSelected([]);
-              }}
+              onClick={() => setState({ mode: ModeType.FILL, selected: [] })}
             >
               <MdOutlineFormatColorFill />
             </div>
             <div
               className={mode === ModeType.SELECT ? "menu-div-selected" : ""}
             >
-              <MdOutlinePanTool
-                onClick={() => {
-                  setMode(ModeType.SELECT);
-                  // setSelected([]);
-                }}
+              <BsHandIndexThumb
+                onClick={() =>
+                  setState({ mode: ModeType.SELECT, selected: [] })
+                }
               />
             </div>
 
@@ -282,18 +200,12 @@ function App() {
               <MdOutlineRedo />
             </div>
             <div
-              onClick={() => {
-                setMode(ModeType.LANDING);
-              }}
+              onClick={() => setState({ mode: ModeType.LANDING, selected: [] })}
             >
               <MdOutlineWindow />
             </div>
 
-            <div
-              onClick={() => {
-                // dispatch({ type: ActionType.LOAD, payload: initBuild });
-              }}
-            >
+            <div>
               <MdOutlineFileCopy />
             </div>
             <div>
@@ -304,7 +216,6 @@ function App() {
             </div>
           </div>
           <div className="grid grid-cols-2 rounded-md">
-            {/* <div className="bg-neutral flex flex-wrap rounded-md"> */}
             {usedCount
               .filter((d) => d[2] > 0)
               .map(([shape, color, occ], index) => (
@@ -317,11 +228,11 @@ function App() {
                   </span>
                   <div
                     onClick={() => {
-                      setMode(ModeType.EDIT);
-                      setCurrent([shape, color, 0]);
+                      // setMode(ModeType.EDIT);
+                      // setCurrent([shape, color, 0]);
                     }}
                   >
-                    <LegoIcon shape={shape} color={color} rotate={0} />
+                    <DotButton shape={shape} color={color} rotate={0} />
                   </div>
                 </div>
               ))}
@@ -332,12 +243,7 @@ function App() {
           <Landing />
         ) : (
           <div className=" relative">
-            <Board
-            // boardColor={curBoard[2]}
-            // board={{}}
-            // dimension={[curBoard[0], curBoard[1]]}
-            // handlePress={handlePress}
-            />
+            <Board />
           </div>
         )}
       </div>

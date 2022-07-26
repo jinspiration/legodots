@@ -1,4 +1,5 @@
-import create from "zustand";
+import create, { SetState } from "zustand";
+// import { SetState } from "zustand";
 // import { Dot } from "./App";
 import { devtools, persist } from "zustand/middleware";
 import produce, {
@@ -14,7 +15,7 @@ export type Dot = [string, string, number];
 export type DotOnBoard = [number, string, string, number];
 type Board = { [key: string]: Array<DotOnBoard> };
 export enum ModeType {
-  LANDING = "LANDING",
+  LANDING = "landing",
   EDIT = "edit",
   DELETE = "delete",
   SELECT = "select",
@@ -30,9 +31,13 @@ interface Store {
   color: string;
   m: number;
   n: number;
-  start: (color: string, m: number, n: number, board?: Board) => void;
-  setMode: (m: ModeType) => void;
-  setCurrent: (c: Dot) => void;
+  // start: (color: string, m: number, n: number, board?: Board) => void;
+  // setState: (
+  //   partial: Store | Partial<Store> | ((state: Store) => Store | Partial<Store>)
+  // ) => void;
+  setState: SetState<Store>;
+  // setMode: (m: ModeType) => void;
+  // setCurrent: (c: Dot) => void;
   press: (i: number, j: number) => void;
 }
 
@@ -63,20 +68,11 @@ const useStore = create<Store>()(
     mode: ModeType.LANDING,
     board: {},
     color: "blue-light",
-    m: 8,
-    n: 8,
-    start: (color: string, m: number, n: number, board?: Board) =>
-      set((state) => ({
-        board: board ?? {},
-        color,
-        m,
-        n,
-        mode: ModeType.EDIT,
-        selected: [],
-        current: ["rect", "blue-light", 0],
-      })),
-    setMode: (m: ModeType) => set((state) => ({ mode: m })),
-    setCurrent: (c: Dot) => set((state) => ({ current: c })),
+    m: 0,
+    n: 0,
+    setState: set,
+    // setMode: (m: ModeType) => set((state) => ({ mode: m })),
+    // setCurrent: (c: Dot) => set((state) => ({ current: c })),
     press: (i: number, j: number) => {
       set((state) => {
         const key = i * state.m + j;
@@ -133,14 +129,21 @@ const useStore = create<Store>()(
                 clearKey(draft, key);
               }),
             };
-          // case ModeType.FILL:
-          //   return {
-          //     board: recordBoard(state.board, (draft: Draft<Board>) => {
-          //       if (draft[key]) {
-          //         draft[key][1] = state.current[1];
-          //       }
-          //     }),
-          //   };
+          case ModeType.FILL:
+            return {
+              board: recordBoard(state.board, (draft: Draft<Board>) => {
+                if (!draft[key]) return;
+                draft[key].forEach(([root, _, __, rotate]) => {
+                  Object.values(draft).forEach((dots) => {
+                    dots.forEach((dot) => {
+                      if (dot[0] === root && dot[3] === rotate) {
+                        dot[2] = state.current[1];
+                      }
+                    });
+                  });
+                });
+              }),
+            };
           default:
             console.log("default");
             return {};
@@ -152,12 +155,10 @@ const useStore = create<Store>()(
 
 const clearRoot = (draft: Draft<Board>, root: number, rotate: number) => {
   Object.entries(draft).forEach(([key, dots]) => {
-    if (dots.some(([rt, ...rest]) => rt === root)) {
-      draft[key] = draft[key].filter(
-        ([rt, _, __, ro]) => rt !== root || ro !== rotate
-      );
-      if (draft[key].length === 0) delete draft[key];
-    }
+    draft[key] = draft[key].filter(
+      ([rt, _, __, ro]) => rt !== root || ro !== rotate
+    );
+    if (draft[key].length === 0) delete draft[key];
   });
 };
 const clearKey = (draft: Draft<Board>, k: number) => {
@@ -165,18 +166,9 @@ const clearKey = (draft: Draft<Board>, k: number) => {
   const toClear: Array<[number, number]> = draft[k].map(
     ([root, _, __, rotate]) => [root, rotate]
   );
-  console.log(toClear);
   toClear.forEach(([root, rotate]) => {
     clearRoot(draft, root, rotate);
   });
-  // Object.entries(draft).forEach(([key, dots]) => {
-  //   if (dots.some(([root, ...rest]) => roots.includes(root))) {
-  //     draft[key] = draft[key].filter(
-  //       ([root, ...rest]) => !roots.includes(root)
-  //     );
-  //     if (draft[key].length === 0) delete draft[key];
-  //   }
-  // });
 };
 
 const editBigArc: mutator = (

@@ -5,12 +5,7 @@ import { DOTS, GRID } from "./meta.json";
 import useStore from "./store";
 
 const PAINT = Object.keys(DOTS);
-const Board: React.FC<{
-  // board: BoardData;
-  // boardColor: string;
-  // dimension: [number, number];
-  // handlePress: (i: number, j: number) => void;
-}> = ({}) => {
+const Board: React.FC<{}> = ({}) => {
   const board = useStore((state) => state.board);
   const boardColor = useStore((state) => state.color);
   const m = useStore((state) => state.m);
@@ -208,7 +203,7 @@ const Board: React.FC<{
                         className={"fill-lego-" + color}
                         transform={
                           `translate(${x * GRID},${y * GRID})` +
-                          (rotate === "0"
+                          (rotate === 0
                             ? ""
                             : `rotate(${rotate} ${GRID / 2} ${GRID / 2})`)
                         }
@@ -218,53 +213,6 @@ const Board: React.FC<{
                 })}
               </React.Fragment>
             );
-            // const [shape1, shape2] = shape.split("|");
-            // const [color1, color2] = color.split("|");
-            // const [rotate1, rotate2] = shape.split("|");
-            // if (["hold", "curve"].includes(shape)) return null;
-
-            // return (
-            //   <React.Fragment key={key + shape + color + rotate}>
-            //     {PAINT.includes(shape1) && (
-            //       <use
-            //         href={"#" + shape1}
-            //         className={"fill-lego-" + color1}
-            //         transform={
-            //           `translate(${x * GRID},${y * GRID})` +
-            //           (rotate === "0"
-            //             ? ""
-            //             : `rotate(${rotate1} ${GRID / 2} ${GRID / 2})`)
-            //         }
-            //       />
-            //     )}
-            //     {PAINT.includes(shape2) && (
-            //       <use
-            //         href={"#" + shape2}
-            //         className={"fill-lego-" + color2}
-            //         transform={
-            //           `translate(${x * GRID},${y * GRID})` +
-            //           (rotate === "0"
-            //             ? ""
-            //             : `rotate(${rotate2} ${GRID / 2} ${GRID / 2})`)
-            //         }
-            //       />
-            //     )}
-            //   </React.Fragment>
-            // );
-            // return (
-            //   // <>
-            //   <use
-            //     key={key}
-            //     href={"#" + shape}
-            //     className={"fill-lego-" + color}
-            //     transform={
-            //       `translate(${x * GRID},${y * GRID})` +
-            //       (rotate === "0"
-            //         ? ""
-            //         : `rotate(${rotate} ${GRID / 2} ${GRID / 2})`)
-            //     }
-            //   />
-            // );
           })}
         </g>
       </svg>
