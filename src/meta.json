@@ -1,9 +1,10 @@
 {
   "GRID": 50,
   "DOTS": {
-    "rect": { "rotate": [0] },
-    "circle": { "rotate": [0] },
-    "arc": { "rotate": [0, 90, 180, 270] }
+    "rect": { "size": 1, "rotate": [0] },
+    "circle": { "size": 1, "rotate": [0] },
+    "arc": { "size": 1, "rotate": [0, 90, 180, 270] },
+    "bigarc": { "size": 2, "rotate": [0, 90, 180, 270] }
   },
   "BOARDCOLORS": {
     "lego-blue": "#006CB7",

@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { BOARDCOLORS, GRID } from "./meta.json";
-
+// import { useBuild } from "./store/build";
+import useStore from "./store";
 const Landing: React.FC<{
-  chooseBoard: (m: number, n: number, color: string) => void;
-}> = ({ chooseBoard }) => {
+  // chooseBoard: (m: number, n: number, color: string) => void;
+}> = ({}) => {
   const [m, setM] = useState(8);
   const [n, setN] = useState(8);
   const [color, setColor] = useState("lego-blue");
+  const start = useStore((state) => state.start);
   return (
     <div className="w-full h-full grid grid-rows-[50%_50%] sm:grid-rows-1 sm:grid-cols-[50%_50%]">
       <div className="flex">
@@ -91,7 +93,7 @@ const Landing: React.FC<{
         </div>
         <button
           className="btn-success btn-md rounded-lg text-success-content"
-          onClick={() => chooseBoard(m, n, color)}
+          onClick={() => start(color, m, n)}
         >
           Start Building
         </button>
