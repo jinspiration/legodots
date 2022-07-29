@@ -1,7 +1,7 @@
 import { useGesture } from "@use-gesture/react";
 import React, { useCallback, useEffect, useRef } from "react";
 import { MdMyLocation } from "react-icons/md";
-import { GRID } from "./meta";
+import { GRID, SHAPES } from "./meta";
 import useStore from "./store";
 
 const Board: React.FC<{}> = ({}) => {
@@ -9,6 +9,7 @@ const Board: React.FC<{}> = ({}) => {
   const boardColor = useStore((state) => state.color);
   const m = useStore((state) => state.m);
   const n = useStore((state) => state.n);
+  const selected = useStore((state) => state.selected);
   const press = useStore((state) => state.press);
   const svgRef = useRef<SVGSVGElement>(null);
   const boardRef = useRef<SVGSVGElement>(null);
@@ -150,7 +151,9 @@ const Board: React.FC<{}> = ({}) => {
       eventOptions: { passive: false },
     }
   );
-
+  useEffect(() => {
+    console.log(selected);
+  }, [selected]);
   return (
     <>
       {/* <div className="overflow-visible z-50 hidden absolute right-0 bottom-0">
@@ -161,6 +164,7 @@ const Board: React.FC<{}> = ({}) => {
       <div className="absolute bottom-10 right-10 z-50" onClick={reset}>
         <MdMyLocation />
       </div>
+
       <svg
         id="svg"
         ref={svgRef}
@@ -184,30 +188,34 @@ const Board: React.FC<{}> = ({}) => {
             width={m * GRID}
             height={n * GRID}
           />
-          {Object.entries(board).map(([key, dots]) => {
-            // if (place < 0) return null;
-            let place = parseInt(key);
-            // place = place < 0 ? -place  : place ;
-            const x = place % m,
-              y = Math.floor(place / m);
+          {board.map((row, i) => {
             return (
-              <React.Fragment key={key}>
-                {dots.map(([root, shape, color, rotate]) => {
-                  return (
-                    key === "" + root && (
+              <React.Fragment key={"" + i}>
+                {row.map((dot, j) => {
+                  if (dot === "") return null;
+                  const todraw = dot.includes("|") ? dot.split("|") : [dot];
+                  return todraw.map((d, ii) => {
+                    const [shape, rotate, color] = d.split(".");
+                    const isSelected = selected.has(
+                      [i, j, shape, rotate, color].join(".")
+                    );
+                    console.log(shape, rotate, color);
+                    return SHAPES.includes(shape) ? (
                       <use
-                        key={key + root + shape + color + rotate}
+                        key={"" + i + j + ii}
                         href={"#" + shape}
+                        // style={{ mask: "url(#mask-stripe)" }}
+                        mask={isSelected ? "url(#mask)" : ""}
                         className={"fill-lego-" + color}
                         transform={
-                          `translate(${x * GRID},${y * GRID})` +
-                          (rotate === 0
+                          `translate(${j * GRID},${i * GRID})` +
+                          (rotate === "0"
                             ? ""
                             : `rotate(${rotate} ${GRID / 2} ${GRID / 2})`)
                         }
                       />
-                    )
-                  );
+                    ) : null;
+                  });
                 })}
               </React.Fragment>
             );

@@ -13,3 +13,10 @@
     @apply w-full h-full p-1 fill-secondary hover:fill-success-content real-hover:hover:bg-success;
   }
 }
+
+@layer utilities {
+  .mask {
+    -webkit-mask-image: url(#mask1);
+    mask-image: url(#mask1);
+  }
+}

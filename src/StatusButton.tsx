@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { BsHandIndexThumb } from "react-icons/bs";
 import { MdOutlineEditOff, MdOutlineWindow, MdWaterDrop } from "react-icons/md";
-import { DOTS } from "./App";
+import { DOTS } from "./meta";
 import DotButton from "./DotButton";
 import useStore, { ModeType } from "./store";
 
@@ -13,12 +13,12 @@ const StatusButton: React.FC = () => {
     setState((state) => {
       console.log("rotate current");
       const rotate = DOTS[state.current[0]].rotate;
-      const ir = rotate.indexOf(state.current[2]);
+      const ir = rotate.indexOf(state.current[1]);
       return {
         current: [
           state.current[0],
-          state.current[1],
           rotate[(ir + 1) % rotate.length],
+          state.current[2],
         ],
       };
     });
@@ -48,8 +48,8 @@ const StatusButton: React.FC = () => {
         <div className="p-2" onClick={rotateCurrent}>
           <DotButton
             shape={current[0]}
-            color={current[1]}
-            rotate={current[2]}
+            rotate={current[1]}
+            color={current[2]}
           />
         </div>
       );
@@ -64,7 +64,7 @@ const StatusButton: React.FC = () => {
         <div className="p-2">
           <MdWaterDrop
             size={30}
-            className={`fill-lego-${current[1]} w-full h-full`}
+            className={`fill-lego-${current[2]} w-full h-full`}
           />
         </div>
       );

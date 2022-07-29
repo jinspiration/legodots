@@ -96,13 +96,13 @@ const Landing: React.FC<{
           className="btn-success btn-md rounded-lg text-success-content"
           onClick={() =>
             setState({
-              board: {},
+              board: new Array(n).fill(0).map(() => new Array(m).fill("")),
               color,
               m,
               n,
               mode: ModeType.EDIT,
-              selected: [],
-              current: ["rect", "blue-light", 0],
+              selected: new Set(),
+              current: ["rect", 0, "blue-light"],
             })
           }
         >

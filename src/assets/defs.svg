@@ -4,6 +4,14 @@
       <feDropShadow dx="0.5" dy="0.5" stdDeviation="1" floodOpacity="0.8" />
       <feDropShadow dx="-0.5" dy="-0.5" stdDeviation="1" floodOpacity="0.8" />
     </filter>
+    <pattern id="stripe" patternUnits="userSpaceOnUse" width="4" height="4">
+      <path d="M-1,1 l2,-2
+               M0,4 l4,-4
+               M3,5 l2,-2" stroke="white" strokeWidth="2" />
+    </pattern>
+    <mask id="mask">
+      <rect height="100" width="100" fill="url(#stripe)" />
+    </mask>
     <pattern id="pattern" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
       <circle cx="25" cy="25" r="12.5" stroke-width="0.5" stroke="black" fill-opacity="0" filter="url(#shadow)" />
       <text x="15" y="16" font-size="7" font-style="italic" opacity="0.3" transform="scale(1,1.8)">LEGO</text>

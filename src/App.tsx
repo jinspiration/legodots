@@ -18,9 +18,9 @@ import {
 } from "react-icons/md";
 import { BsHandIndexThumb, BsArrowsMove } from "react-icons/bs";
 import { ReactComponent as Defs } from "./assets/defs.svg";
-import meta, { GRID, DOTCOLORS } from "./meta.json";
+import { DOTS, DOTCOLORS } from "./meta";
 // import useBuild, { ActionType } from "./build";
-import { ModeType, Dot } from "./store";
+import { ModeType } from "./store";
 import Board from "./Board";
 import Landing from "./Landing";
 // import useStore from "./store/control";
@@ -30,8 +30,6 @@ import StatusButton from "./StatusButton";
 import useStore from "./store";
 import Used from "./Used";
 
-export const DOTS: { [key: string]: { size: number; rotate: number[] } } =
-  meta.DOTS;
 // export const GRID = 50;
 // export const SHAPES = ["rect", "circle", "arc"];
 // export const HASROTATE = ["arc"];
@@ -53,28 +51,6 @@ export const DOTS: { [key: string]: { size: number; rotate: number[] } } =
 //   "lego-white": "#F3F1EF",
 //   "lego-black": "#151515",
 // };
-
-export type BoardData = { [key: number]: Dot };
-export type History = [Dot, number, number?];
-
-const initBuild: BoardData = {
-  // 123: ["circle", "yellow"],
-  // 227: ["circle", "lilac"],
-  // 207: ["circle", "lilac"],
-  // 217: ["circle", "lilac"],
-  // 27: ["circle", "green"],
-  // 28: ["circle", "green"],
-  // 3: ["arc", "blue-light", 2],
-  // 4: ["arc", "blue-light", 3],
-  // 19: ["arc", "blue-light", 1],
-  // 20: ["arc", "blue-light", 0],
-  // 44: ["rect", "green"],
-  // 45: ["rect", "green"],
-  // 60: ["rect", "green"],
-  // 61: ["rect", "green"],
-  // 76: ["rect", "green"],
-  // 77: ["rect", "green"],
-};
 
 function App() {
   const current = useStore((state) => state.current);
@@ -105,17 +81,17 @@ function App() {
                     return {
                       current: [
                         shape,
-                        state.current[1],
-                        DOTS[shape].rotate.indexOf(state.current[2]) !== -1
-                          ? state.current[2]
+                        DOTS[shape].rotate.indexOf(state.current[1]) !== -1
+                          ? state.current[1]
                           : 0,
+                        state.current[2],
                       ],
                       mode: ModeType.EDIT,
                     };
                   })
                 }
               >
-                <DotButton shape={shape} color={current[1]} rotate={0} />
+                <DotButton shape={shape} rotate={0} color={current[2]} />
               </div>
             ))}
             {Object.keys(DOTCOLORS).map((_color) => {
@@ -127,7 +103,7 @@ function App() {
                   onClick={() =>
                     setState((state) => {
                       return {
-                        current: [state.current[0], color, state.current[2]],
+                        current: [state.current[0], state.current[1], color],
                       };
                     })
                   }
@@ -146,7 +122,7 @@ function App() {
                     setState((state) => {
                       if (state.mode === ModeType.LANDING) return {};
                       return {
-                        current: [state.current[0], color, state.current[2]],
+                        current: [state.current[0], state.current[1], color],
                         mode: ModeType.EDIT,
                       };
                     })
@@ -154,8 +130,8 @@ function App() {
                 >
                   <DotButton
                     shape={current[0]}
+                    rotate={current[1]}
                     color={color}
-                    rotate={current[2]}
                   />
                 </div>
               );
@@ -167,20 +143,20 @@ function App() {
           <div className="rounded-lg grid grid-cols-2  justify-center items-center [&>div]:menu-div [&>div>svg]:menu-icon">
             <div
               className={mode === ModeType.DELETE ? "menu-div-selected" : ""}
-              onClick={() => setState({ mode: ModeType.DELETE, selected: [] })}
+              onClick={() => setState({ mode: ModeType.DELETE })}
             >
               <MdOutlineEditOff />
             </div>
             <div
               className={mode === ModeType.EDIT ? "menu-div-selected" : ""}
-              onClick={() => setState({ mode: ModeType.EDIT, selected: [] })}
+              onClick={() => setState({ mode: ModeType.EDIT })}
             >
               <MdModeEdit />
             </div>
 
             <div
               className={mode === ModeType.FILL ? "menu-div-selected" : ""}
-              onClick={() => setState({ mode: ModeType.FILL, selected: [] })}
+              onClick={() => setState({ mode: ModeType.FILL })}
             >
               <MdOutlineFormatColorFill />
             </div>
@@ -188,9 +164,7 @@ function App() {
               className={mode === ModeType.SELECT ? "menu-div-selected" : ""}
             >
               <BsHandIndexThumb
-                onClick={() =>
-                  setState({ mode: ModeType.SELECT, selected: [] })
-                }
+                onClick={() => setState({ mode: ModeType.SELECT })}
               />
             </div>
 
@@ -200,9 +174,7 @@ function App() {
             <div>
               <MdOutlineRedo />
             </div>
-            <div
-              onClick={() => setState({ mode: ModeType.LANDING, selected: [] })}
-            >
+            <div onClick={() => setState({ mode: ModeType.LANDING })}>
               <MdOutlineWindow />
             </div>
 
@@ -216,30 +188,7 @@ function App() {
               <MdOutlinePrint />
             </div>
           </div>
-          {/* <div className="grid grid-cols-2 rounded-md"> */}
           <Used />
-          {/* {usedCount
-              .filter((d) => d[2] > 0)
-              .map(([shape, color, occ], index) => (
-                <div
-                  key={[shape, color, occ, index].join(".")}
-                  className="indicator p-0.5 w-full h-full"
-                >
-                  <span className="indicator-item indicator-center indicator-middle badge badge-xs badge-info text-info-content">
-                    {occ}
-                  </span>
-                  <div
-                    onClick={() => {
-                      // setMode(ModeType.EDIT);
-                      // setCurrent([shape, color, 0]);
-                    }}
-                  >
-                    <DotButton shape={shape} color={color} rotate={0} />
-                  </div>
-                </div>
-              ))} */}
-          {/* </div> */}
-          {/* </div> */}
         </div>
         {mode === ModeType.LANDING ? (
           <Landing />
