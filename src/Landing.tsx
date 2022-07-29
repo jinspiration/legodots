@@ -101,7 +101,7 @@ const Landing: React.FC<{
               m,
               n,
               mode: ModeType.EDIT,
-              selected: new Set(),
+              selected: [],
               current: ["rect", 0, "blue-light"],
             })
           }

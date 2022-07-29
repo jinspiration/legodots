@@ -8,11 +8,9 @@ import produce, {
   enablePatches,
   Patch,
 } from "immer";
-// import { WritableDraft } from "immer/dist/internal";
 
 enablePatches();
 type Dot = [string, number, string];
-// export type DotOnBoard = [number, string, string, number];
 type Board = string[][];
 type Placing = Array<[number, number, string, number, string]>;
 export enum ModeType {
@@ -24,10 +22,9 @@ export enum ModeType {
   DROP = "drop",
 }
 type UsedCount = [string, number][];
-type Delta = { [key: string]: number };
 interface Store {
   current: Dot;
-  selected: Set<string>;
+  selected: string[];
   mode: ModeType;
   color: string;
   m: number;
@@ -47,7 +44,7 @@ const useStore = create<Store>()(
   devtools((set) => ({
     // state
     current: ["rect", 0, "blue-light"],
-    selected: new Set(),
+    selected: [],
     mode: ModeType.LANDING,
     color: "blue-light",
     m: 0,
@@ -58,41 +55,35 @@ const useStore = create<Store>()(
     setState: set,
     press: (i: number, j: number) => {
       set((state) => {
-        const key = i * state.m + j;
         const name = state.current[0] + "." + state.current[2];
-        console.log("press", i, j, key);
 
         // SELECT
         if (state.mode === ModeType.SELECT) {
           if (state.board[i][j] === "") return {};
-          const _selected = new Set<string>(
-            placingFromKey(i, j, state.board).map(([di, dj, s, r, c]) =>
-              [i + di, j + dj, s, r, c].join(".")
-            )
+          console.log("seleted", state.selected);
+          const _selected = placingFromKey(i, j, state.board).map(
+            ([di, dj, s, r, c]) => [i + di, j + dj, s, r].join(".")
           );
           console.log(state.selected, _selected);
           if (
-            [..._selected].every((str) => {
-              console.log(str, state.selected.has(str));
-              return state.selected.has(str);
+            _selected.every((str) => {
+              return state.selected.includes(str);
             })
           ) {
             console.log("deselect", i, j);
             return {
-              selected: new Set(
-                [...state.selected].filter((str) => !_selected.has(str))
+              selected: state.selected.filter(
+                (str) => !_selected.includes(str)
               ),
             };
           } else {
             console.log("select", i, j);
             return {
-              selected: new Set([..._selected, ...state.selected]),
+              selected: [...new Set([..._selected, ...state.selected])],
             };
           }
         }
         // mutate board EDIT DELETE FILL DROP
-        let delta: Delta = {};
-        const deselected = new Set<string>();
         const [board, patches, inversePatches] =
           state.mode === ModeType.EDIT
             ? produceWithPatches(state.board, (draft: Draft<Board>) => {
@@ -104,18 +95,14 @@ const useStore = create<Store>()(
                   if (placable(i, j, placing, draft)) {
                     console.log("placable");
                     place(i, j, placing, draft);
-                    delta[name] = (delta[name] ?? 0) + 1;
                   } else {
                     console.log("not placable");
                   }
                 } else if (draft[i][j] === "") {
                   draft[i][j] = state.current.join(".");
-                  delta[name] = (delta[name] ?? 0) + 1;
                 } else if (!draft[i][i].includes("|")) {
                   // delete
                   if (draft[i][j] === state.current.join(".")) {
-                    deselected.add(key + "|" + 0);
-                    delta[name] = (delta[name] ?? 0) - 1;
                     draft[i][j] = "";
                   }
                   if (
@@ -124,18 +111,17 @@ const useStore = create<Store>()(
                     state.current[1] === +draft[i][j].split(".")[1]
                   ) {
                     draft[i][j] = draft[i][j] + "|" + state.current.join(".");
-                    delta[name] = (delta[name] ?? 0) + 1;
                   }
                 }
               })
             : state.mode === ModeType.DELETE
             ? produceWithPatches(state.board, (draft: Draft<Board>) => {
                 if (draft[i][j] === "") return;
-                delta = remove(i, j, placingFromKey(i, j, draft), draft);
+                remove(i, j, placingFromKey(i, j, draft), draft);
               })
             : state.mode === ModeType.FILL
             ? produceWithPatches(state.board, (draft: Draft<Board>) => {
-                if (!draft[i][j]) return;
+                if (draft[i][j] === "") return;
                 paint(
                   i,
                   j,
@@ -148,25 +134,27 @@ const useStore = create<Store>()(
               produceWithPatches(state.board, (draft: Draft<Board>) => {
                 console.log("DROP not implemented yet");
               });
-        let used: UsedCount = state.used.map(([name, count]) => {
-          if (delta[name]) {
-            const deltaCnt = delta[name];
-            delete delta[name];
-            return [name, count + deltaCnt];
-          }
-          return [name, count];
+        const usedObj: { [key: string]: number } = {};
+        board.forEach((row) => {
+          row.forEach((str: string) => {
+            console.log("str", str);
+            if (str === "") return;
+            const dots = str.includes("|") ? str.split("|") : [str];
+            console.log("dots", dots);
+            dots.forEach((dot) => {
+              const [s, _, c] = dot.split(".");
+              if (!SHAPES.includes(s)) return;
+              usedObj[s + "." + c] = (usedObj[s + "." + c] ?? 0) + 1;
+            });
+          });
         });
-        Object.entries(delta).forEach(([name, count]) => {
-          used.push([name, count]);
-        });
-        used = used.filter(([name, count]) => count > 0);
-        used.sort((a, b) => b[1] - a[1]);
-        const selected = new Set(
-          [...state.selected].filter((x) => !deselected.has(x))
-        );
-        console.log("selected", selected);
-        console.log("patch", patches);
-        return { board, used, selected };
+        console.log(" usedObj", usedObj);
+        const used: UsedCount = Object.entries(usedObj).map(([key, count]) => [
+          key,
+          count,
+        ]);
+        used.sort(([, a], [, b]) => b - a);
+        return { board, used };
       });
     },
   }))
@@ -228,13 +216,11 @@ const place = (
   placing: Placing,
   draft: Draft<Board>
 ) => {
-  const delta: Delta = {};
   placing.forEach(([di, dj, s, r, c]) => {
     const i = pi + di,
       j = pj + dj;
     if (SHAPES.includes(s)) {
       const name = s + "." + c;
-      delta[name] = (delta[name] ?? 0) + 1;
     }
     const str = [s, r, c].join(".");
     if (draft[i][j] === "") {
@@ -243,7 +229,6 @@ const place = (
       draft[i][j] = draft[i][j] + "|" + str;
     }
   });
-  return delta;
 };
 
 const remove = (
@@ -252,9 +237,7 @@ const remove = (
   removing: Placing,
   draft: Draft<Board>
 ) => {
-  const delta: Delta = {};
   removing.forEach(([di, dj, s, r, c]) => {
-    console.log(di, dj);
     const i = pi + di,
       j = pj + dj;
     if (draft[i][j].includes("|")) {
@@ -263,21 +246,14 @@ const remove = (
       draft[i][j] = bd1 === d ? bd2 : bd1;
       if (bd1 === d) {
         const [s1, r1, c1] = bd1.split(".");
-        const name = s1 + "." + c1;
-        delta[name] = (delta[name] ?? 0) - 1;
       } else {
         const [s2, r2, c2] = bd2.split(".");
-        const name = s2 + "." + c2;
-        delta[name] = (delta[name] ?? 0) - 1;
       }
       console.log("remove", i, j, draft[i][j]);
     } else {
       draft[i][j] = "";
-      const name = s + "." + c;
-      delta[name] = (delta[name] ?? 0) - 1;
     }
   });
-  return delta;
 };
 
 const paint = (

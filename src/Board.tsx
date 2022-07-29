@@ -196,15 +196,12 @@ const Board: React.FC<{}> = ({}) => {
                   const todraw = dot.includes("|") ? dot.split("|") : [dot];
                   return todraw.map((d, ii) => {
                     const [shape, rotate, color] = d.split(".");
-                    const isSelected = selected.has(
-                      [i, j, shape, rotate, color].join(".")
-                    );
-                    console.log(shape, rotate, color);
+                    const key = [i, j, shape, rotate].join(".");
+                    const isSelected = selected.includes(key);
                     return SHAPES.includes(shape) ? (
                       <use
-                        key={"" + i + j + ii}
+                        key={key}
                         href={"#" + shape}
-                        // style={{ mask: "url(#mask-stripe)" }}
                         mask={isSelected ? "url(#mask)" : ""}
                         className={"fill-lego-" + color}
                         transform={
