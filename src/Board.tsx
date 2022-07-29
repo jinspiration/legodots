@@ -6,9 +6,9 @@ import useStore from "./store";
 
 const Board: React.FC<{}> = ({}) => {
   const board = useStore((state) => state.board);
-  const boardColor = useStore((state) => state.color);
-  const m = useStore((state) => state.m);
-  const n = useStore((state) => state.n);
+  const boardColor = useStore((state) => state.boardColor);
+  const m = board.length,
+    n = board[0].length;
   const selected = useStore((state) => state.selected);
   const press = useStore((state) => state.press);
   const svgRef = useRef<SVGSVGElement>(null);

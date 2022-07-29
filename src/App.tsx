@@ -56,6 +56,10 @@ function App() {
   const current = useStore((state) => state.current);
   const mode = useStore((state) => state.mode);
   const setState = useStore((state) => state.setState);
+  const curRedo = useStore((state) => state.curRedo);
+  const redoStack = useStore((state) => state.redoStack);
+  const undoStack = useStore((state) => state.undoStack);
+  const undo = useStore((state) => state.undo);
   const [usedCount, setUsedCount] = React.useState<
     Array<[string, string, number]>
   >([]);
@@ -168,10 +172,18 @@ function App() {
               />
             </div>
 
-            <div>
+            <div
+              onClick={() => {
+                undo(true);
+              }}
+            >
               <MdOutlineUndo />
             </div>
-            <div>
+            <div
+              onClick={() => {
+                undo(false);
+              }}
+            >
               <MdOutlineRedo />
             </div>
             <div onClick={() => setState({ mode: ModeType.LANDING })}>

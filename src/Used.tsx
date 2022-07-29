@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import useStore, { ModeType } from "./store";
 import DotButton from "./DotButton";
+import { SHAPES } from "./meta";
 
 const Used: React.FC<{}> = () => {
+  const board = useStore((state) => state.board);
   const used = useStore((state) => state.used);
   const setState = useStore((state) => state.setState);
   return (

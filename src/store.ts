@@ -7,6 +7,7 @@ import produce, {
   Draft,
   enablePatches,
   Patch,
+  applyPatches,
 } from "immer";
 
 enablePatches();
@@ -23,34 +24,32 @@ export enum ModeType {
 }
 type UsedCount = [string, number][];
 interface Store {
+  mode: ModeType;
   current: Dot;
   selected: string[];
-  mode: ModeType;
-  color: string;
-  m: number;
-  n: number;
+  boardColor: string;
   board: Board;
   used: UsedCount;
+  curRedo: number;
+  redoStack: Patch[][];
+  undoStack: Patch[][];
+  undo: (u: boolean) => void;
   setState: SetState<Store>;
   press: (i: number, j: number) => void;
 }
 
-const redoStack: Patch[][] = [];
-const undoStack: Patch[][] = [];
-
-type mutator = (draft: Draft<Board>, ...args: any) => void;
-
 const useStore = create<Store>()(
   devtools((set) => ({
     // state
+    mode: ModeType.LANDING,
     current: ["rect", 0, "blue-light"],
     selected: [],
-    mode: ModeType.LANDING,
-    color: "blue-light",
-    m: 0,
-    n: 0,
+    boardColor: "blue-light",
     board: [],
     used: [],
+    curRedo: 0,
+    redoStack: [],
+    undoStack: [],
     // methods
     setState: set,
     press: (i: number, j: number) => {
@@ -128,28 +127,37 @@ const useStore = create<Store>()(
               produceWithPatches(state.board, (draft: Draft<Board>) => {
                 console.log("DROP not implemented yet");
               });
-        // const usedObj: { [key: string]: number } = {};
-        // board.forEach((row) => {
-        //   row.forEach((str: string) => {
-        //     console.log("str", str);
-        //     if (str === "") return;
-        //     const dots = str.includes("|") ? str.split("|") : [str];
-        //     console.log("dots", dots);
-        //     dots.forEach((dot) => {
-        //       const [s, _, c] = dot.split(".");
-        //       if (!SHAPES.includes(s)) return;
-        //       usedObj[s + "." + c] = (usedObj[s + "." + c] ?? 0) + 1;
-        //     });
-        //   });
-        // });
-        // console.log(" usedObj", usedObj);
-        // const used: UsedCount = Object.entries(usedObj).map(([key, count]) => [
-        //   key,
-        //   count,
-        // ]);
-        // used.sort(([, a], [, b]) => b - a);
         const { used, selected } = onUpdate(board, state.selected);
-        return { board, used, selected };
+        const redoStack = [...state.redoStack.slice(0, state.curRedo), patches];
+        const undoStack = [
+          ...state.undoStack.slice(0, state.curRedo),
+          inversePatches,
+        ];
+        const curRedo = state.curRedo + 1;
+        console.log("undo", undoStack, redoStack, curRedo);
+        return { board, used, selected, redoStack, undoStack, curRedo };
+      });
+    },
+    undo: (u: boolean) => {
+      set((state) => {
+        console.log("undo", state.curRedo, state.undoStack);
+        if (u) {
+          if (state.curRedo === 0) return {};
+          const board = applyPatches(
+            state.board,
+            state.undoStack[state.curRedo - 1]
+          );
+          const { used, selected } = onUpdate(board, state.selected);
+          return { curRedo: state.curRedo - 1, board, used, selected };
+        } else {
+          if (state.curRedo === state.redoStack.length) return {};
+          const board = applyPatches(
+            state.board,
+            state.redoStack[state.curRedo]
+          );
+          const { used, selected } = onUpdate(board, state.selected);
+          return { curRedo: state.curRedo + 1, board, used, selected };
+        }
       });
     },
   }))
@@ -237,9 +245,6 @@ const place = (
   placing.forEach(([di, dj, s, r, c]) => {
     const i = pi + di,
       j = pj + dj;
-    if (SHAPES.includes(s)) {
-      const name = s + "." + c;
-    }
     const str = [s, r, c].join(".");
     if (draft[i][j] === "") {
       draft[i][j] = str;
@@ -262,11 +267,6 @@ const remove = (
       const [bd1, bd2] = draft[i][j].split("|");
       const d = [s, r, c].join(".");
       draft[i][j] = bd1 === d ? bd2 : bd1;
-      if (bd1 === d) {
-        const [s1, r1, c1] = bd1.split(".");
-      } else {
-        const [s2, r2, c2] = bd2.split(".");
-      }
       console.log("remove", i, j, draft[i][j]);
     } else {
       draft[i][j] = "";

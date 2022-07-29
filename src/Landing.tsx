@@ -7,7 +7,7 @@ const Landing: React.FC<{
 }> = ({}) => {
   const [m, setM] = useState(8);
   const [n, setN] = useState(8);
-  const [color, setColor] = useState("lego-blue");
+  const [boardColor, setColor] = useState("lego-blue");
   // const start = useStore((state) => state.start);
   const setState = useStore((state) => state.setState);
   return (
@@ -17,14 +17,14 @@ const Landing: React.FC<{
           <rect
             x="0"
             y="0"
-            className={`fill-${color}`}
+            className={`fill-${boardColor}`}
             width={m * GRID}
             height={n * GRID}
           />
           <rect
             x="0"
             y="0"
-            className={`bg-${color}`}
+            className={`bg-${boardColor}`}
             fill="url(#pattern)"
             width={m * GRID}
             height={n * GRID}
@@ -97,9 +97,7 @@ const Landing: React.FC<{
           onClick={() =>
             setState({
               board: new Array(n).fill(0).map(() => new Array(m).fill("")),
-              color,
-              m,
-              n,
+              boardColor,
               mode: ModeType.EDIT,
               selected: [],
               current: ["rect", 0, "blue-light"],
