@@ -58,7 +58,8 @@ const Board: React.FC<{}> = ({}) => {
   }, [reset]);
   useEffect(() => {
     console.log(board);
-  }, [board]);
+    console.log("selected", selected);
+  }, [board, selected]);
   useGesture(
     {
       onPointerUp: ({ event, pinching }) => {
@@ -151,9 +152,6 @@ const Board: React.FC<{}> = ({}) => {
       eventOptions: { passive: false },
     }
   );
-  useEffect(() => {
-    console.log(selected);
-  }, [selected]);
   return (
     <>
       {/* <div className="overflow-visible z-50 hidden absolute right-0 bottom-0">

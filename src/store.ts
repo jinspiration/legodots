@@ -55,29 +55,23 @@ const useStore = create<Store>()(
     setState: set,
     press: (i: number, j: number) => {
       set((state) => {
-        const name = state.current[0] + "." + state.current[2];
-
         // SELECT
         if (state.mode === ModeType.SELECT) {
           if (state.board[i][j] === "") return {};
-          console.log("seleted", state.selected);
           const _selected = placingFromKey(i, j, state.board).map(
             ([di, dj, s, r, c]) => [i + di, j + dj, s, r].join(".")
           );
-          console.log(state.selected, _selected);
           if (
             _selected.every((str) => {
               return state.selected.includes(str);
             })
           ) {
-            console.log("deselect", i, j);
             return {
               selected: state.selected.filter(
                 (str) => !_selected.includes(str)
               ),
             };
           } else {
-            console.log("select", i, j);
             return {
               selected: [...new Set([..._selected, ...state.selected])],
             };
@@ -134,32 +128,56 @@ const useStore = create<Store>()(
               produceWithPatches(state.board, (draft: Draft<Board>) => {
                 console.log("DROP not implemented yet");
               });
-        const usedObj: { [key: string]: number } = {};
-        board.forEach((row) => {
-          row.forEach((str: string) => {
-            console.log("str", str);
-            if (str === "") return;
-            const dots = str.includes("|") ? str.split("|") : [str];
-            console.log("dots", dots);
-            dots.forEach((dot) => {
-              const [s, _, c] = dot.split(".");
-              if (!SHAPES.includes(s)) return;
-              usedObj[s + "." + c] = (usedObj[s + "." + c] ?? 0) + 1;
-            });
-          });
-        });
-        console.log(" usedObj", usedObj);
-        const used: UsedCount = Object.entries(usedObj).map(([key, count]) => [
-          key,
-          count,
-        ]);
-        used.sort(([, a], [, b]) => b - a);
-        return { board, used };
+        // const usedObj: { [key: string]: number } = {};
+        // board.forEach((row) => {
+        //   row.forEach((str: string) => {
+        //     console.log("str", str);
+        //     if (str === "") return;
+        //     const dots = str.includes("|") ? str.split("|") : [str];
+        //     console.log("dots", dots);
+        //     dots.forEach((dot) => {
+        //       const [s, _, c] = dot.split(".");
+        //       if (!SHAPES.includes(s)) return;
+        //       usedObj[s + "." + c] = (usedObj[s + "." + c] ?? 0) + 1;
+        //     });
+        //   });
+        // });
+        // console.log(" usedObj", usedObj);
+        // const used: UsedCount = Object.entries(usedObj).map(([key, count]) => [
+        //   key,
+        //   count,
+        // ]);
+        // used.sort(([, a], [, b]) => b - a);
+        const { used, selected } = onUpdate(board, state.selected);
+        return { board, used, selected };
       });
     },
   }))
 );
 
+const onUpdate = (board: Board, selected: string[]) => {
+  const usedObj: { [key: string]: number } = {};
+  const stillselecetd: string[] = [];
+  board.forEach((row, i) => {
+    row.forEach((str: string, j) => {
+      if (str === "") return;
+      const dots = str.includes("|") ? str.split("|") : [str];
+      dots.forEach((dot) => {
+        const [s, r, c] = dot.split(".");
+        stillselecetd.push([i, j, s, r].join("."));
+        if (SHAPES.includes(s))
+          usedObj[s + "." + c] = (usedObj[s + "." + c] ?? 0) + 1;
+      });
+    });
+  });
+  const used: UsedCount = Object.entries(usedObj).map(([key, count]) => [
+    key,
+    count,
+  ]);
+  used.sort(([, a], [, b]) => b - a);
+  selected = selected.filter((str) => stillselecetd.includes(str));
+  return { used, selected };
+};
 const placingFromKey = (i: number, j: number, board: Draft<Board> | Board) => {
   const placing: Placing = [];
   const todo = board[i][j].includes("|")
