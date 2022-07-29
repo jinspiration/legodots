@@ -8,11 +8,11 @@ const Used: React.FC<{}> = () => {
   const used = useStore((state) => state.used);
   const setState = useStore((state) => state.setState);
   return (
-    <div className="grid grid-cols-2 rounded-md">
+    <div className="grow rounded-md bg-neutral overflow-y-auto px-2 md:px-0 md:py-2">
       {used.map(([name, occ]) => {
         const [shape, color] = name.split(".");
         return (
-          <div key={name} className="indicator p-0.5 w-full h-full">
+          <div key={name} className="indicator w-12 h-12 p-1">
             <span className="indicator-item indicator-center indicator-middle badge badge-xs badge-info text-info-content">
               {occ}
             </span>

@@ -44,7 +44,7 @@ const useStore = create<Store>()(
     mode: ModeType.LANDING,
     current: ["rect", 0, "blue-light"],
     selected: [],
-    boardColor: "blue-light",
+    boardColor: "",
     board: [],
     used: [],
     curRedo: 0,

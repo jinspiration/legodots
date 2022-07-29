@@ -1,12 +1,20 @@
 import { useGesture } from "@use-gesture/react";
 import React, { useCallback, useEffect, useRef } from "react";
-import { MdMyLocation } from "react-icons/md";
+import {
+  MdMyLocation,
+  MdOutlineMenu,
+  MdOutlineRedo,
+  MdOutlineUndo,
+} from "react-icons/md";
 import { GRID, SHAPES } from "./meta";
-import useStore from "./store";
+import StatusButton from "./StatusButton";
+import useStore, { ModeType } from "./store";
 
 const Board: React.FC<{}> = ({}) => {
   const board = useStore((state) => state.board);
   const boardColor = useStore((state) => state.boardColor);
+  const undo = useStore((state) => state.undo);
+  const setState = useStore((state) => state.setState);
   const m = board.length,
     n = board[0].length;
   const selected = useStore((state) => state.selected);
@@ -153,16 +161,39 @@ const Board: React.FC<{}> = ({}) => {
     }
   );
   return (
-    <>
+    <div className=" relative md:col-start-2">
       {/* <div className="overflow-visible z-50 hidden absolute right-0 bottom-0">
         {log.map((l, i) => (
           <p key={i.toString()}>{l}</p>
         ))}
       </div> */}
-      <div className="absolute bottom-10 right-10 z-50" onClick={reset}>
-        <MdMyLocation />
+      <div className="absolute bottom-10 right-10 z-50 flex gap-x-2 space-between">
+        <div onClick={reset}>
+          <MdMyLocation size={20} />
+        </div>
+        <div onClick={() => setState({ mode: ModeType.LANDING })}>
+          <MdOutlineMenu size={20} />
+        </div>
       </div>
-
+      <div className="absolute left-10 bottom-10 z-50 flex gap-x-2 space-between">
+        <div
+          onClick={() => {
+            undo(true);
+          }}
+        >
+          <MdOutlineUndo size={20} />
+        </div>
+        <div
+          onClick={() => {
+            undo(false);
+          }}
+        >
+          <MdOutlineRedo size={20} />
+        </div>
+      </div>
+      <div className="absolute top-0 left-0 z-50 w-12 h-12 md:hidden">
+        <StatusButton />
+      </div>
       <svg
         id="svg"
         ref={svgRef}
@@ -217,7 +248,7 @@ const Board: React.FC<{}> = ({}) => {
           })}
         </g>
       </svg>
-    </>
+    </div>
   );
 };
 

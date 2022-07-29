@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { BOARDCOLORS, GRID } from "./meta";
 // import { useBuild } from "./store/build";
 import useStore, { ModeType } from "./store";
-const Landing: React.FC<{
+const Menu: React.FC<{
   // chooseBoard: (m: number, n: number, color: string) => void;
 }> = ({}) => {
   const [m, setM] = useState(8);
@@ -11,7 +11,7 @@ const Landing: React.FC<{
   // const start = useStore((state) => state.start);
   const setState = useStore((state) => state.setState);
   return (
-    <div className="w-full h-full grid grid-rows-[50%_50%] sm:grid-rows-1 sm:grid-cols-[50%_50%]">
+    <div className="md:col-span-2 w-full h-full grid grid-rows-[50%_50%] sm:grid-rows-1 sm:grid-cols-[50%_50%]">
       <div className="flex">
         <svg className="h-fit" viewBox={`0 0 ${m * GRID} ${n * GRID}`}>
           <rect
@@ -110,4 +110,4 @@ const Landing: React.FC<{
     </div>
   );
 };
-export default Landing;
+export default Menu;
