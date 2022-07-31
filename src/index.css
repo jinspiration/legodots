@@ -3,20 +3,34 @@
 @tailwind utilities;
 
 @layer components {
-  .menu-div {
-    @apply rounded-md m-1 overflow-hidden ring-2 ring-secondary hover:ring-success real-hover:hover:bg-success;
-  }
-  .menu-div-selected {
-    @apply bg-success ring-success !important;
-  }
   .menu-icon {
-    @apply w-full h-full p-1 fill-secondary hover:fill-success-content real-hover:hover:bg-success;
+    @apply w-full h-full p-1 fill-white;
   }
 }
 
 @layer utilities {
+  .button-xs {
+    @apply w-6 h-6 p-0.5 [&>svg]:w-full [&>svg]:h-full;
+  }
+  .button-sm {
+    @apply w-12 h-12 p-1 [&>svg]:w-full [&>svg]:h-full;
+  }
+  .button-md {
+    @apply w-24 h-24 p-2 [&>svg]:w-full [&>svg]:h-full;
+  }
+  .button-xs-sm {
+    @apply button-xs md:button-sm;
+  }
+  .menu-container {
+    @apply rounded-md flex p-0.5 divide-x divide-gray-600;
+  }
   .mask {
     -webkit-mask-image: url(#mask1);
     mask-image: url(#mask1);
+  }
+  .scrollbar::-webkit-scrollbar {
+    height: 0;
+    width: 0;
+    background: transparent;
   }
 }

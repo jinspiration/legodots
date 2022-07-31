@@ -4,7 +4,8 @@
     "rect": { "size": 1, "rotate": [0] },
     "circle": { "size": 1, "rotate": [0] },
     "arc": { "size": 1, "rotate": [0, 90, 180, 270] },
-    "bigarc": { "size": 2, "rotate": [0, 90, 180, 270] }
+    "bigarc": { "size": 2, "rotate": [0, 90, 180, 270] },
+    "tooth": { "size": 1, "rotate": [0, 90, 180, 270] }
   },
   "BOARDCOLORS": {
     "lego-blue": "#006CB7",

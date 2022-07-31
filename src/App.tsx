@@ -6,8 +6,7 @@ import { ModeType } from "./store";
 import Board from "./Board";
 import Select from "./Select";
 import Menu from "./Menu";
-import DotButton from "./DotButton";
-import StatusButton from "./StatusButton";
+import { StatusButton, DotButton } from "./Buttons";
 import useStore from "./store";
 import Used from "./Used";
 import Edit from "./Edit";
@@ -35,17 +34,12 @@ import Edit from "./Edit";
 // };
 
 function App() {
-  const current = useStore((state) => state.current);
   const mode = useStore((state) => state.mode);
-  const boardColor = useStore((state) => state.boardColor);
 
-  useEffect(() => {
-    console.log("current", current);
-  }, [current]);
   return (
-    <div className="App bg-base-100">
+    <div className="App bg-neutral-200 ">
       <Defs />
-      <div className="container h-screen p-4 lg:mx-auto grid grid-flow-row-dense grid-rows-[6rem_minmax(0,_1fr)_6rem] md:grid-rows-[6rem_minmax(0,1fr)] md:grid-cols-[6rem_minmax(0,_1fr)] [&>div]:rounded-lg gap-1">
+      <div className="container p-2 h-screen mx-auto grid grid-flow-row-dense grid-rows-[6rem_minmax(0,_1fr)_6rem] md:grid-rows-[6rem_minmax(0,1fr)] md:grid-cols-[6rem_minmax(0,_1fr)] [&>div>div]:rounded-lg gap-1 [&>div>div]:bg-zinc-700">
         {/* status button */}
         {/* <StatusButton /> */}
         {/* Edit area */}

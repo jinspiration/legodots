@@ -11,41 +11,27 @@ const Menu: React.FC<{
   // const start = useStore((state) => state.start);
   const setState = useStore((state) => state.setState);
   return (
-    <div className="md:col-span-2 w-full h-full grid grid-rows-[50%_50%] sm:grid-rows-1 sm:grid-cols-[50%_50%]">
-      <div className="flex">
-        <svg className="h-fit" viewBox={`0 0 ${m * GRID} ${n * GRID}`}>
+    <main className="md:col-span-2 w-full h-full grid grid-rows-[50%_50%] sm:grid-rows-1 sm:grid-cols-[50%_50%]">
+      <div className="flex px-4 py-10 justify-center items-center">
+        <svg className="w-full h-full" viewBox={`0 0 ${n * GRID} ${m * GRID}`}>
           <rect
             x="0"
             y="0"
             className={`fill-${boardColor}`}
-            width={m * GRID}
-            height={n * GRID}
+            width={n * GRID}
+            height={m * GRID}
           />
           <rect
             x="0"
             y="0"
             className={`bg-${boardColor}`}
             fill="url(#pattern)"
-            width={m * GRID}
-            height={n * GRID}
+            width={n * GRID}
+            height={m * GRID}
           />
         </svg>
       </div>
       <div className="mt-10 flex flex-col gap-10 px-5">
-        <div className="w-full relative">
-          <input
-            className="range range-accent pr-10"
-            type="range"
-            value={m}
-            min={0}
-            max={64}
-            step={8}
-            onChange={(e) => {
-              setM(Number(Math.max(8, Number(e.target.value))));
-            }}
-          />
-          <span className="absolute right-0 top-0 text-info">{m}</span>
-        </div>
         <div className="w-full relative">
           <input
             className=" range range-accent pr-10"
@@ -60,6 +46,21 @@ const Menu: React.FC<{
           />
           <span className="absolute right-0 top-0 text-info">{n}</span>
         </div>
+        <div className="w-full relative">
+          <input
+            className="range range-accent pr-10"
+            type="range"
+            value={m}
+            min={0}
+            max={64}
+            step={8}
+            onChange={(e) => {
+              setM(Number(Math.max(8, Number(e.target.value))));
+            }}
+          />
+          <span className="absolute right-0 top-0 text-info">{m}</span>
+        </div>
+
         <div className="grid grid-flow-col w-full justify-start">
           {Object.keys(BOARDCOLORS).map((c) => {
             return (
@@ -96,18 +97,22 @@ const Menu: React.FC<{
           className="btn-success btn-md rounded-lg text-success-content"
           onClick={() =>
             setState({
-              board: new Array(n).fill(0).map(() => new Array(m).fill("")),
-              boardColor,
               mode: ModeType.EDIT,
-              selected: [],
               current: ["rect", 0, "blue-light"],
+              selected: [],
+              selectedPlacing: { width: 0, height: 0, placing: [] },
+              boardColor,
+              board: new Array(m).fill(0).map(() => new Array(n).fill([])),
+              curRedo: 0,
+              undoStack: [],
+              redoStack: [],
             })
           }
         >
           Start Building
         </button>
       </div>
-    </div>
+    </main>
   );
 };
 export default Menu;
