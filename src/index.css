@@ -3,16 +3,12 @@
 @tailwind utilities;
 
 @layer base {
-  /* body {
+  body {
     overflow: hidden;
-  } */
+  }
   ::-webkit-slider-runnable-track {
     background: #053a5f;
-    /* height: 0.75rem; */
   }
-  /* div svg g {
-    touch-action: none;
-  } */
 }
 @layer components {
   .menu-icon {

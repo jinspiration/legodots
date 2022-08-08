@@ -21,7 +21,7 @@ const MAX_UNDO = 100,
     "white",
     "black",
   ],
-  DEFAULT_BOARD_COLROS = [
+  DEFAULT_BOARD_COLORS = [
     "blue",
     "black",
     "blue-bright",
@@ -98,7 +98,7 @@ const useStore = create<Store>()(
       patterns: [],
       shapes: DEFAULT_SHAPES,
       colors: DEFAULT_COLORS,
-      boardColors: DEFAULT_BOARD_COLROS,
+      boardColors: DEFAULT_BOARD_COLORS,
       // editor state
       editorMode: EditorMode.PLACE,
       current: ["rect", 0, "blue"],
@@ -403,7 +403,7 @@ const useStore = create<Store>()(
       },
     }),
     {
-      name: "legodots-store",
+      name: "legodots-store-1",
       version: 1,
       partialize: (state) => ({
         gallery: state.gallery,
@@ -413,16 +413,6 @@ const useStore = create<Store>()(
         patterns: state.patterns,
         board: state.board,
       }),
-      migrate: (persistedState, version) => {
-        return {
-          gallery: [],
-          shapes: DEFAULT_SHAPES,
-          colors: DEFAULT_COLORS,
-          boardColors: DEFAULT_BOARD_COLORS,
-          patterns: [],
-          board: { name: "", color: "", data: [] },
-        };
-      },
     }
   )
 );
