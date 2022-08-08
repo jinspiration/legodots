@@ -1,23 +1,23 @@
 import React, { useEffect } from "react";
 import { BsEraser, BsHandIndexThumb } from "react-icons/bs";
+import { VscMove } from "react-icons/vsc";
 import {
   MdOutlineAddToPhotos,
   MdOutlineCancel,
   MdOutlineFormatColorFill,
   MdOutlineKeyboardArrowUp,
+  MdOutlineStar,
 } from "react-icons/md";
 import { StatusButton } from "./Buttons";
-import useStore, { ModeType } from "./store";
+import useStore, { EditorMode } from "./store";
 
 const Control: React.FC = () => {
   const setState = useStore((state) => state.setState);
-  const mode = useStore((state) => state.mode);
-  const current = useStore((state) => state.current);
-  const boardColor = useStore((state) => state.boardColor);
+  const boardColor = useStore((state) => state.board.color);
   const rotateCurrent = useStore((state) => state.rotateCurrent);
   const selected = useStore((state) => state.selected);
-  const pickupSelected = useStore((state) => state.pickupSelected);
-  const duplicateSelected = useStore((state) => state.duplicateSelected);
+  const copy = useStore((state) => state.copy);
+  const savePattern = useStore((state) => state.savePattern);
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       e.preventDefault();
@@ -34,11 +34,7 @@ const Control: React.FC = () => {
   }, []);
   return (
     <div className="absolute top-2 left-2 z-50 flex gap-x-1 ">
-      <div
-        className={`${
-          mode === ModeType.EDIT ? "bg-zinc-700" : "bg-blue-500"
-        } menu-container shadow-sm md:hidden`}
-      >
+      <div className={"menu-container shadow-sm md:hidden"}>
         <div className="button-xs md:button-sm" onClick={rotateCurrent}>
           <StatusButton />
         </div>
@@ -47,7 +43,7 @@ const Control: React.FC = () => {
         <div
           onClick={() => {
             setState((state) => {
-              return boardColor === "" ? {} : { mode: ModeType.FILL };
+              return boardColor === "" ? {} : { editorMode: EditorMode.FILL };
             });
           }}
         >
@@ -56,7 +52,7 @@ const Control: React.FC = () => {
         <div
           onClick={() => {
             setState((state) => {
-              return boardColor === "" ? {} : { mode: ModeType.DELETE };
+              return boardColor === "" ? {} : { editorMode: EditorMode.DELETE };
             });
           }}
         >
@@ -65,7 +61,7 @@ const Control: React.FC = () => {
         <div
           onClick={() => {
             setState((state) => {
-              return boardColor === "" ? {} : { mode: ModeType.SELECT };
+              return boardColor === "" ? {} : { editorMode: EditorMode.SELECT };
             });
           }}
         >
@@ -75,15 +71,25 @@ const Control: React.FC = () => {
       {selected.length !== 0 && (
         <div className="bg-yellow-200 menu-container [&>*]:button-xs-sm [&>*>svg]:fill-gray-700 flex shadow-md">
           <div
-            onClick={() => setState({ selected: [], mode: ModeType.SELECT })}
+            onClick={() =>
+              setState({ selected: [], editorMode: EditorMode.SELECT })
+            }
           >
             <MdOutlineCancel />
           </div>
-          <div onClick={() => pickupSelected()}>
-            <MdOutlineKeyboardArrowUp />
-          </div>
-          <div>
-            <MdOutlineAddToPhotos onClick={() => duplicateSelected()} />
+          {copy ? (
+            <div>
+              <MdOutlineAddToPhotos
+                onClick={() => setState((state) => ({ copy: !state.copy }))}
+              />
+            </div>
+          ) : (
+            <div onClick={() => setState((state) => ({ copy: !state.copy }))}>
+              <VscMove />
+            </div>
+          )}
+          <div onClick={() => savePattern()}>
+            <MdOutlineStar />
           </div>
         </div>
       )}

@@ -1,29 +1,33 @@
 /** @type {import('tailwindcss').Config} */
 
-const { BOARDCOLORS, DOTCOLORS } = require("./src/meta.json");
+const { COLORS } = require("./src/meta.json");
 
-const fillLegoColors = [
-  ...Object.keys(DOTCOLORS),
-  ...Object.keys(BOARDCOLORS),
-].map((c) => "fill-" + c);
-const bgLegoColors = [
-  ...Object.keys(DOTCOLORS),
-  ...Object.keys(BOARDCOLORS),
-].map((c) => "bg-" + c);
+const legoColors = Object.fromEntries(
+  Object.entries({ ...COLORS }).map(([key, value]) => ["lego-" + key, value])
+);
+const safelist = [
+  ...Object.keys(legoColors).map((k) => "fill-" + k),
+  ...Object.keys(legoColors).map((k) => "bg-" + k),
+];
 
 module.exports = {
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
+    height: (theme) => ({
+      auto: "auto",
+      ...theme("spacing"),
+      full: "100%",
+      screen: "calc(var(--vh) * 100)",
+    }),
     extend: {
       screens: {
         "real-hover": { raw: "(hover: hover)" },
       },
       colors: {
-        ...BOARDCOLORS,
-        ...DOTCOLORS,
+        ...legoColors,
       },
     },
   },
-  safelist: [...fillLegoColors, ...bgLegoColors],
-  plugins: [require("daisyui")],
+  safelist,
+  // plugins: [require("daisyui")],
 };

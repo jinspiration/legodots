@@ -1,7 +1,7 @@
 import create, { SetState } from "zustand";
 import { DOTS } from "./meta";
 import { devtools, persist } from "zustand/middleware";
-import {
+import immerProduce, {
   produceWithPatches,
   Draft,
   enablePatches,
@@ -9,184 +9,112 @@ import {
   applyPatches,
 } from "immer";
 
+const MAX_UNDO = 100,
+  DEFAULT_SHAPES = ["rect", "circle", "arc", "bigarc", "tooth"],
+  DEFAULT_COLORS = [
+    "blue",
+    "blue-azur",
+    "green",
+    "yellow",
+    "lilac-lavender",
+    "orange-coral",
+    "white",
+    "black",
+  ],
+  DEFAULT_BOARD_COLROS = [
+    "blue",
+    "black",
+    "blue-bright",
+    "yellow-cool",
+    "purple-light",
+    "white",
+  ];
+
 enablePatches();
 export type Dot = [string, number, string];
-type DotOnBoard = Dot[];
-type Board = DotOnBoard[][];
-export type Placing = Array<[number, number, string, number, string]>;
-export enum ModeType {
-  LANDING = "landing",
-  EDIT = "edit",
+export type DotOnBoard = [number, number, string, number, string];
+export type BoardData = Array<Dot>[][];
+export type Board = {
+  name: string;
+  color: string;
+  data: BoardData;
+};
+export type Recorded = { board: Board; selected: string[] };
+export type Placing = Array<DotOnBoard>;
+export type Gallery = Board[];
+export type Pattern = { width: number; height: number; placing: Placing };
+export enum EditorMode {
+  PLACE = "place",
   DELETE = "delete",
   FILL = "fill",
   SELECT = "select",
-  DROP = "drop",
 }
+export enum AppMode {
+  EDITOR = "editor",
+  GALLERY = "gallery",
+  NEW = "new",
+  SETTINGS = "settings",
+  HELP = "help",
+}
+
 interface Store {
-  mode: ModeType;
+  editorMode: EditorMode;
   current: Dot;
   selected: string[];
-  selectedPlacing: { width: number; height: number; placing: Placing };
-  boardColor: string;
-  board: Board;
+  copy: boolean;
+  selectedPattern: number;
   curRedo: number;
   redoStack: Patch[][];
   undoStack: Patch[][];
+  board: Board;
+  // menu
+  gallery: Gallery;
+  patterns: Pattern[];
+  appMode: AppMode;
+  shapes: string[];
+  colors: string[];
+  boardColors: string[];
+  //method
   setState: SetState<Store>;
+  rotateCurrent: () => void;
   undo: (u: boolean) => void;
   press: (i: number, j: number) => void;
-  rotateCurrent: () => void;
-  pickupSelected: () => void;
-  duplicateSelected: () => void;
+  drop: (di: number, dj: number) => void;
+  dropPattern: (i: number, j: number) => void;
+  savePattern: () => void;
+  //gallery metthod
+  switchBoard: (i: number, board?: Board) => void;
+  duplicateBoard: (i: number) => void;
+  changeBoardName: (i: number, name: string) => void;
+  deleteBoard: (i: number) => void;
 }
 
 const useStore = create<Store>()(
   persist(
     (set) => ({
-      // state
-      mode: ModeType.LANDING,
-      current: ["rect", 0, "blue-light"],
+      // persist state
+      board: { data: [], name: "", color: "" },
+      gallery: [],
+      patterns: [],
+      shapes: DEFAULT_SHAPES,
+      colors: DEFAULT_COLORS,
+      boardColors: DEFAULT_BOARD_COLROS,
+      // editor state
+      editorMode: EditorMode.PLACE,
+      current: ["rect", 0, "blue"],
+      copy: true,
       selected: [],
-      selectedPlacing: { width: 0, height: 0, placing: [] },
-      boardColor: "",
-      board: [],
+      selectedPattern: 0,
       curRedo: 0,
       redoStack: [],
       undoStack: [],
+      //menu
+      appMode: AppMode.EDITOR,
       // methods
       setState: set,
-      press: (i: number, j: number) => {
-        set((state) => {
-          // SELECT
-          if (state.mode === ModeType.SELECT) {
-            if (state.board[i][j].length === 0) return {};
-            const _selected = placingFromKey(i, j, state.board).map(
-              ([i, j, s, r, c]) => [i, j, s, r, c].join(".")
-            );
-            if (
-              _selected.every((str) => {
-                return state.selected.includes(str);
-              })
-            ) {
-              return {
-                selected: state.selected.filter(
-                  (str) => !_selected.includes(str)
-                ),
-              };
-            } else {
-              return {
-                selected: [...new Set([..._selected, ...state.selected])],
-              };
-            }
-          }
-          // mutate board EDIT DELETE FILL DROP
-          let deselected: string[] = [],
-            multiselected: string[] = [];
-          const result =
-            state.mode === ModeType.EDIT
-              ? recordMutate(state, (draft: Draft<Board>) => {
-                  if (state.current[0] === "bigarc") {
-                    const placing = bigarcPlacing(
-                      state.current[1],
-                      state.current[2]
-                    );
-                    if (placable(placing, draft, i, j)) {
-                      place(placing, draft, i, j);
-                    } else {
-                    }
-                  } else if (draft[i][j].length === 0) {
-                    draft[i][j] = [state.current];
-                  } else if (draft[i][j]!.length === 1) {
-                    // DELETE
-                    if (equal(draft[i][j][0], state.current) === 2) {
-                      deselected.push(draft[i][j][0].join("."));
-                      draft[i][j] = [];
-                    } else if (
-                      draft[i][j][0][0] === "bigarc" &&
-                      state.current[0] === "arc" &&
-                      state.current[1] === draft[i][j][0][1]
-                    ) {
-                      draft[i][j].push(state.current);
-                    }
-                  }
-                })
-              : state.mode === ModeType.DELETE
-              ? recordMutate(state, (draft: Draft<Board>) => {
-                  if (draft[i][j].length === 0) return;
-                  const placing = placingFromKey(i, j, draft);
-                  placing.forEach((p) => {
-                    deselected.push(p.join("."));
-                  });
-                  remove(placing, draft);
-                })
-              : state.mode === ModeType.FILL
-              ? recordMutate(state, (draft: Draft<Board>) => {
-                  if (draft[i][j].length === 0) return;
-                  let placing = placingFromKey(i, j, draft);
-                  if (
-                    placing.every((p) => state.selected.includes(p.join(".")))
-                  ) {
-                    placing = state.selected.map((key) => {
-                      const [i, j, s, r, c] = key.split(".");
-                      return [+i, +j, s, +r, c];
-                    });
-                    placing.forEach((p) => {
-                      deselected.push(p.join("."));
-                      multiselected.push(
-                        [...p.slice(0, 4), state.current[2]].join(".")
-                      );
-                    });
-                  }
-
-                  paint(placing, draft, state.current[2]);
-                })
-              : // DROP
-                recordMutate(state, (draft: Draft<Board>) => {
-                  if (
-                    placable(state.selectedPlacing.placing, state.board, i, j)
-                  ) {
-                    multiselected = state.selectedPlacing.placing.map(
-                      ([di, dj, s, r, c]) => [i + di, j + dj, s, r, c].join(".")
-                    );
-                    deselected = [...state.selected];
-                    place(state.selectedPlacing.placing, draft, i, j);
-                  }
-                });
-          if (!result) return {};
-          if (deselected.length !== 0 || multiselected.length !== 0) {
-            let selected = state.selected.filter(
-              (str) => !deselected.includes(str)
-            );
-            selected = [...new Set([...selected, ...multiselected])];
-            return { ...result, selected };
-          }
-          return result;
-        });
-      },
-      undo: (u: boolean) => {
-        set((state) => {
-          if (u) {
-            if (state.curRedo === 0) return {};
-            const board = applyPatches(
-              state.board,
-              state.undoStack[state.curRedo - 1]
-            );
-            // const { used, selected } = onUpdate(board, state.selected);
-            return { curRedo: state.curRedo - 1, board };
-          } else {
-            if (state.curRedo === state.redoStack.length) return {};
-            const board = applyPatches(
-              state.board,
-              state.redoStack[state.curRedo]
-            );
-            // const { used, selected } = onUpdate(board, state.selected);
-            return { curRedo: state.curRedo + 1, board };
-          }
-        });
-      },
       rotateCurrent: () => {
         set((state) => {
-          if (state.mode !== ModeType.EDIT) return {};
+          if (state.editorMode !== EditorMode.PLACE) return {};
           const rotate = DOTS[state.current[0]].rotate;
           const ir = rotate.indexOf(state.current[1]);
           return {
@@ -198,56 +126,310 @@ const useStore = create<Store>()(
           };
         });
       },
-      pickupSelected: () => {
+      press: (i: number, j: number) => {
         set((state) => {
-          if (state.selected.length === 0) return {};
-          const { originPlacing, ...selectedPlacing } = placingFromSelected(
-            state.selected
-          );
-          const result = recordMutate(state, (draft: Draft<Board>) => {
-            remove(
-              state.selected.map((key) => {
-                const [i, j, s, r, c] = key.split(".");
-                return [+i, +j, s, +r, c];
-              }),
-              draft
-            );
-          });
-          return {
-            ...result,
-            selectedPlacing,
-            selected: [],
-            mode: ModeType.DROP,
-          };
+          const result =
+            state.editorMode === EditorMode.SELECT
+              ? record(state, (draft) => {
+                  if (draft.board.data[i][j].length !== 0) {
+                    const _selected = placingFromKey(
+                      i,
+                      j,
+                      draft.board.data
+                    ).map(([i, j, s, r, c]) => [i, j, s, r, c].join("."));
+                    if (
+                      _selected.every((str) => draft.selected.includes(str))
+                    ) {
+                      draft.selected = draft.selected.filter(
+                        (str) => !_selected.includes(str)
+                      );
+                    } else {
+                      draft.selected = [
+                        ...new Set([..._selected, ...draft.selected]),
+                      ];
+                    }
+                  }
+                })
+              : state.editorMode === EditorMode.PLACE
+              ? record(state, (draft: Draft<Recorded>) => {
+                  if (state.current[0] === "bigarc") {
+                    const placing = bigarcPlacing(
+                      state.current[1],
+                      state.current[2]
+                    );
+                    if (placable(placing, draft.board.data, i, j)) {
+                      place(placing, draft.board.data, i, j);
+                    } else {
+                    }
+                  } else if (draft.board.data[i][j].length === 0) {
+                    draft.board.data[i][j] = [state.current];
+                  } else if (draft.board.data[i][j]!.length === 1) {
+                    // DELETE
+                    if (equal(draft.board.data[i][j][0], state.current) === 2) {
+                      const idx = draft.selected.indexOf(
+                        draft.board.data[i][j].join(".")
+                      );
+                      if (idx !== -1) {
+                        draft.selected.splice(idx, 1);
+                      }
+                      // deselected.push(draft.board.data[i][j][0].join("."));
+                      draft.board.data[i][j] = [];
+                    } else if (
+                      draft.board.data[i][j][0][0] === "bigarc" &&
+                      state.current[0] === "arc" &&
+                      state.current[1] === draft.board.data[i][j][0][1]
+                    ) {
+                      draft.board.data[i][j].push(state.current);
+                    }
+                  }
+                })
+              : state.editorMode === EditorMode.DELETE
+              ? record(state, (draft: Draft<Recorded>) => {
+                  if (draft.board.data[i][j].length === 0) return;
+                  const placing = placingFromKey(i, j, draft.board.data);
+                  placing.forEach((p) => {
+                    const idx = draft.selected.indexOf(p.join("."));
+                    if (idx !== -1) {
+                      draft.selected.splice(idx, 1);
+                    }
+                  });
+                  remove(placing, draft.board.data);
+                })
+              : record(state, (draft: Draft<Recorded>) => {
+                  if (draft.board.data[i][j].length === 0) return;
+                  let placing = placingFromKey(i, j, draft.board.data);
+                  if (
+                    placing.every((p) => state.selected.includes(p.join(".")))
+                  ) {
+                    placing = state.selected.map((key) => {
+                      const [i, j, s, r, c] = key.split(".");
+                      return [+i, +j, s, +r, c];
+                    });
+                  }
+                  placing.forEach((p) => {
+                    const idx = draft.selected.indexOf(p.join("."));
+                    if (idx !== -1) {
+                      draft.selected.splice(
+                        idx,
+                        1,
+                        [...p.slice(0, 4), state.current[2]].join(".")
+                      );
+                    }
+                  });
+                  paint(placing, draft.board.data, state.current[2]);
+                });
+
+          return result ? result : {};
         });
       },
-      duplicateSelected: () => {
+      drop: (di, dj) => {
         set((state) => {
-          if (state.selected.length === 0) return {};
-          const { originPlacing, ...selectedPlacing } = placingFromSelected(
-            state.selected
-          );
-          return { selectedPlacing, selected: [], mode: ModeType.DROP };
+          if (di === 0 && dj === 0) return {};
+          const placing: Placing = state.selected.map((p) => {
+            const [i, j, s, r, c] = p.split(".");
+            return [+i, +j, s, +r, c];
+          });
+          if (state.copy) {
+            const result = record(state, (draft) => {
+              if (placable(placing, draft.board.data, di, dj)) {
+                // console.log("placable");
+                place(placing, draft.board.data, di, dj);
+                draft.selected = draft.selected.map((p) => {
+                  const [i, j, s, r, c] = p.split(".");
+                  return [+i + di, +j + dj, s, +r, c].join(".");
+                });
+              }
+            });
+            return result ? result : {};
+          } else {
+            const tempBoard = immerProduce(
+              state.board.data,
+              (draft: Draft<BoardData>) => remove(placing, draft)
+            );
+            if (placable(placing, tempBoard, di, dj)) {
+              const result = record(state, (draft: Draft<Recorded>) => {
+                remove(placing, draft.board.data);
+                place(placing, draft.board.data, di, dj);
+                draft.selected = draft.selected.map((p) => {
+                  const [i, j, s, r, c] = p.split(".");
+                  return [+i + di, +j + dj, s, +r, c].join(".");
+                });
+              });
+              return result ? result : {};
+            }
+            return {};
+          }
+        });
+      },
+      dropPattern: (i, j) => {
+        set((state) => {
+          const result = record(state, (draft) => {
+            const placing = state.patterns[state.selectedPattern].placing;
+            if (placable(placing, draft.board.data, i, j)) {
+              place(placing, draft.board.data, i, j);
+            }
+          });
+          return result ? result : {};
+        });
+      },
+      savePattern: () => {
+        set((state) => {
+          let mini = Number.MAX_SAFE_INTEGER,
+            maxi = -1,
+            minj = Number.MAX_SAFE_INTEGER,
+            maxj = -1;
+          const originPlacing: Placing = state.selected.map((str) => {
+            const [i, j, s, r, c] = str.split(".");
+            mini = Math.min(mini, +i);
+            minj = Math.min(minj, +j);
+            maxi = Math.max(maxi, +i);
+            maxj = Math.max(maxj, +j);
+            return [+i, +j, s, +r, c];
+          });
+          const placing: Placing = originPlacing.map(([i, j, s, r, c]) => [
+            i - mini,
+            j - minj,
+            s,
+            r,
+            c,
+          ]);
+          const pattern = {
+            placing,
+            height: maxi - mini + 1,
+            width: maxj - minj + 1,
+          };
+          return { selectedPattern: 0, patterns: [pattern, ...state.patterns] };
+        });
+      },
+      undo: (u: boolean) => {
+        set((state) => {
+          if (u) {
+            if (state.curRedo === 0) return {};
+            const { board, selected } = applyPatches(
+              { board: state.board, selected: state.selected },
+              state.undoStack[state.curRedo - 1]
+            );
+            return { curRedo: state.curRedo - 1, board, selected };
+          } else {
+            if (state.curRedo === state.redoStack.length) return {};
+            const { board, selected } = applyPatches(
+              { board: state.board, selected: state.selected },
+              state.redoStack[state.curRedo]
+            );
+            return { curRedo: state.curRedo + 1, board, selected };
+          }
+        });
+      },
+      switchBoard: (i, board) => {
+        set((state) => {
+          if (i === 0) return { appMode: AppMode.EDITOR };
+          const newEditor = {
+            editorMode: EditorMode.PLACE,
+            current: ["rect", 0, "blue"] as [string, number, string],
+            selected: [],
+            // selectedPlacing: { width: 0, height: 0, placing: [] },
+            curRedo: 0,
+            undoStack: [],
+            redoStack: [],
+          };
+          if (i === -1) {
+            return {
+              board: board!,
+              gallery: state.board.name
+                ? [state.board, ...state.gallery]
+                : state.gallery,
+              ...newEditor,
+              appMode: AppMode.EDITOR,
+            };
+          } else {
+            const board = state.gallery[i - 1];
+            const gallery = state.gallery.filter((_, j) => j !== i - 1);
+            if (state.board.name) gallery.unshift(state.board);
+            return {
+              board,
+              gallery,
+              appMode: AppMode.EDITOR,
+            };
+          }
+        });
+      },
+      duplicateBoard: (i) => {
+        set((state) => {
+          let name =
+            i === 0
+              ? state.board.name + " copy"
+              : state.gallery[i - 1].name + " copy";
+          while (
+            name === "" ||
+            state.board.name === name ||
+            name.length > 18 ||
+            state.gallery.some((b) => b.name === name)
+          ) {
+            name = (Math.random() + 1).toString(36).substring(7);
+          }
+          return i === 0
+            ? {
+                gallery: [{ ...state.board, name }, ...state.gallery],
+              }
+            : {
+                gallery: [
+                  ...state.gallery.slice(0, i),
+                  {
+                    ...state.gallery[i - 1],
+                    name,
+                  },
+                  ...state.gallery.slice(i),
+                ],
+              };
+        });
+      },
+      changeBoardName: (i, name) => {
+        set((state) =>
+          i === 0
+            ? { board: { ...state.board, name } }
+            : {
+                gallery: state.gallery.map((_, j) =>
+                  j === i - 1 ? { ..._, name } : _
+                ),
+              }
+        );
+      },
+      deleteBoard: (i) => {
+        set((state) => {
+          return i === 0
+            ? { board: { name: "", color: "", data: [] } }
+            : { gallery: state.gallery.filter((_, j) => j !== i - 1) };
         });
       },
     }),
     {
       name: "legodots-store",
+      version: 1,
       partialize: (state) => ({
-        mode: state.mode,
-        current: state.current,
-        selected: state.selected,
-        selectedPlacing: state.selectedPlacing,
-        boardColor: state.boardColor,
+        gallery: state.gallery,
+        shapes: state.shapes,
+        colors: state.colors,
+        boardColors: state.boardColors,
+        patterns: state.patterns,
         board: state.board,
       }),
+      migrate: (persistedState, version) => {
+        return {
+          gallery: [],
+          shapes: DEFAULT_SHAPES,
+          colors: DEFAULT_COLORS,
+          boardColors: DEFAULT_BOARD_COLORS,
+          patterns: [],
+          board: { name: "", color: "", data: [] },
+        };
+      },
     }
   )
 );
 
-const recordMutate = (state: Store, recipe: (draft: Draft<Board>) => void) => {
-  const [board, patches, inversePatches] = produceWithPatches(
-    state.board,
+const record = (state: Store, recipe: (draft: Draft<Recorded>) => void) => {
+  const [{ board, selected }, patches, inversePatches] = produceWithPatches(
+    { board: state.board, selected: state.selected },
     recipe
   );
   if (patches.length === 0) return null;
@@ -256,11 +438,20 @@ const recordMutate = (state: Store, recipe: (draft: Draft<Board>) => void) => {
     ...state.undoStack.slice(0, state.curRedo),
     inversePatches,
   ];
-  const curRedo = state.curRedo + 1;
-  return { board, redoStack, undoStack, curRedo };
+  let curRedo = state.curRedo + 1;
+  if (curRedo > MAX_UNDO) {
+    undoStack.shift();
+    redoStack.shift();
+    curRedo--;
+  }
+  return { board, selected, redoStack, undoStack, curRedo };
 };
 
-const placingFromKey = (i: number, j: number, board: Draft<Board> | Board) => {
+const placingFromKey = (
+  i: number,
+  j: number,
+  board: Draft<BoardData> | BoardData
+) => {
   const placing: Placing = [];
   board[i][j].forEach(([s, r, c]) => {
     if (s === "bigarc") {
@@ -279,37 +470,9 @@ const placingFromKey = (i: number, j: number, board: Draft<Board> | Board) => {
   return placing;
 };
 
-const placingFromSelected = (selected: string[]) => {
-  let mini = Number.MAX_SAFE_INTEGER,
-    maxi = -1,
-    minj = Number.MAX_SAFE_INTEGER,
-    maxj = -1;
-  const originPlacing: Placing = selected.map((str) => {
-    const [i, j, s, r, c] = str.split(".");
-    mini = Math.min(mini, +i);
-    minj = Math.min(minj, +j);
-    maxi = Math.max(maxi, +i);
-    maxj = Math.max(maxj, +j);
-    return [+i, +j, s, +r, c];
-  });
-  const placing: Placing = originPlacing.map(([i, j, s, r, c]) => [
-    i - mini,
-    j - minj,
-    s,
-    r,
-    c,
-  ]);
-  return {
-    originPlacing,
-    placing,
-    height: maxi - mini + 1,
-    width: maxj - minj + 1,
-  };
-};
-
 const placable = (
   placing: Placing,
-  board: Board | Draft<Board>,
+  board: BoardData | Draft<BoardData>,
   oi = 0,
   oj = 0
 ) => {
@@ -318,6 +481,7 @@ const placable = (
   return placing.every(([di, dj, s, r]) => {
     const i = oi + di,
       j = oj + dj;
+    // console.log(di, dj, oi, oj, i, j);
     if (i < 0 || i >= m || j < 0 || j >= n) return false;
     if (board[i][j].length === 2) return false;
     if (board[i][j].length === 0) return true;
@@ -337,7 +501,7 @@ const placable = (
   });
 };
 
-const place = (placing: Placing, draft: Draft<Board>, oi = 0, oj = 0) => {
+const place = (placing: Placing, draft: Draft<BoardData>, oi = 0, oj = 0) => {
   placing.forEach(([di, dj, s, r, c]) => {
     const i = oi + di,
       j = oj + dj;
@@ -349,7 +513,7 @@ const place = (placing: Placing, draft: Draft<Board>, oi = 0, oj = 0) => {
   });
 };
 
-const remove = (removing: Placing, draft: Draft<Board>, oi = 0, oj = 0) => {
+const remove = (removing: Placing, draft: Draft<BoardData>, oi = 0, oj = 0) => {
   removing.forEach(([di, dj, s, r, c]) => {
     const i = oi + di,
       j = oj + dj;
@@ -367,7 +531,7 @@ const remove = (removing: Placing, draft: Draft<Board>, oi = 0, oj = 0) => {
 
 const paint = (
   placing: Placing,
-  draft: Draft<Board>,
+  draft: Draft<BoardData>,
   color: string,
   oi = 0,
   oj = 0

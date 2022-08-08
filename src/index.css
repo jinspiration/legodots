@@ -2,12 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* body {
+    overflow: hidden;
+  } */
+  ::-webkit-slider-runnable-track {
+    background: #053a5f;
+    /* height: 0.75rem; */
+  }
+  /* div svg g {
+    touch-action: none;
+  } */
+}
 @layer components {
   .menu-icon {
     @apply w-full h-full p-1 fill-white;
   }
 }
-
 @layer utilities {
   .button-xs {
     @apply w-6 h-6 p-0.5 [&>svg]:w-full [&>svg]:h-full;
@@ -24,6 +35,22 @@
   .menu-container {
     @apply rounded-md flex p-0.5 divide-x divide-gray-600;
   }
+  .menu-item {
+    @apply flex flex-col items-center [&>span]:text-sm [&>span]:text-white;
+  }
+  .range {
+    -webkit-appearance: none;
+    appearance: none;
+    /* background: transparent; */
+    cursor: pointer;
+    width: 100%;
+    /* width: 15rem; */
+  }
+  /* input[type="range"]::-webkit-slider-runnable-track {
+    background: #053a5f;
+    height: 0.5rem;
+  } */
+
   .mask {
     -webkit-mask-image: url(#mask1);
     mask-image: url(#mask1);

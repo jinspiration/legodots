@@ -23,10 +23,10 @@
     <pattern id="grid-black" x="0" y="0" width="400" height="400" patternUnits="userSpaceOnUse">
       <rect x="0" y="0" width="400" height="400" fill="none" stroke="black" stroke-width="3" />
     </pattern>
-    <rect id="rect" stroke="black" stroke-width="0.15" x="1" y="1" width="48" height="48" rx="3" filter="url(#shadow)" />
-    <circle id="circle" cx="25" cy="25" r="23" stroke="black" strokeWidth="0.15" filter="url(#shadow)" />
-    <path id="arc" d="m1,1 l48,0 a48,48 0 0,1 -48,48 l0,-48" stroke="black" strokeWidth="0.15" filter="url(#shadow)"></path>
-    <path id="tooth" d="m1,1 l48,0 l0,24 a24,24 0 0,1 -48,0 l0,-24" stroke="black" strokeWidth="0.15" filter="url(#shadow)"></path>
-    <path id="bigarc" d="m51,1 l48,0 a98,98 0 0,1 -98,98 l0,-48 a51,51 0 0,0 50,-50" stroke="black" strokeWidth="0.15" filter="url(#shadow)"></path>
+    <rect id="rect"  x="1" y="1" width="48" height="48" rx="3" filter="url(#shadow)" />
+    <circle id="circle" cx="25" cy="25" r="23" filter="url(#shadow)" />
+    <path id="arc" d="m1,1 l48,0 a48,48 0 0,1 -48,48 l0,-48" filter="url(#shadow)"></path>
+    <path id="tooth" d="m1,1 l48,0 l0,24 a24,24 0 0,1 -48,0 l0,-24" filter="url(#shadow)"></path>
+    <path id="bigarc" d="m51,1 l48,0 a98,98 0 0,1 -98,98 l0,-48 a51,51 0 0,0 50,-50" filter="url(#shadow)"></path>
   </defs>
 </svg>

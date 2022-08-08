@@ -8,7 +8,7 @@ import {
   MdOutlineWindow,
 } from "react-icons/md";
 import { DOTS, GRID } from "./meta";
-import useStore, { ModeType } from "./store";
+import useStore, { EditorMode } from "./store";
 
 interface Prop {
   shape: string;
@@ -31,20 +31,18 @@ const _DotButton: React.FC<Prop> = ({ shape, color, rotate }) => {
 };
 
 const _StatusButton: React.FC = () => {
-  const mode = useStore((state) => state.mode);
+  const editorMode = useStore((state) => state.editorMode);
   const current = useStore((state) => state.current);
-  return mode === ModeType.LANDING ? (
-    <MdOutlineWindow />
-  ) : mode === ModeType.EDIT ? (
+  return editorMode === EditorMode.PLACE ? (
     <DotButton shape={current[0]} rotate={current[1]} color={current[2]} />
-  ) : mode === ModeType.DELETE ? (
-    <BsEraser />
-  ) : mode === ModeType.FILL ? (
+  ) : editorMode === EditorMode.DELETE ? (
+    <BsEraser className="fill-blue-500" />
+  ) : editorMode === EditorMode.FILL ? (
     <MdOutlineFormatColorFill className={`fill-lego-${current[2]}`} />
-  ) : mode === ModeType.SELECT ? (
-    <BsHandIndexThumb />
+  ) : editorMode === EditorMode.SELECT ? (
+    <BsHandIndexThumb className="fill-blue-500" />
   ) : (
-    <MdOutlineKeyboardArrowDown />
+    <MdOutlineKeyboardArrowDown className="fill-blue-500" />
   );
 };
 

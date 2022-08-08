@@ -7,22 +7,36 @@
     "bigarc": { "size": 2, "rotate": [0, 90, 180, 270] },
     "tooth": { "size": 1, "rotate": [0, 90, 180, 270] }
   },
-  "BOARDCOLORS": {
-    "lego-blue": "#006CB7",
-    "lego-black": "#151515",
-    "lego-blue-bright": "#189E9F",
-    "lego-yellow-cool": "#FFF579",
-    "lego-orange-bright": "#F57D20",
-    "lego-purple-light": "#F6ADCD"
-  },
-  "DOTCOLORS": {
-    "lego-blue": "#006CB7",
-    "lego-blue-light": "#00BED3",
-    "lego-green": "#00A850",
-    "lego-yellow": "#FFCD03",
-    "lego-lilac": "#BCA6D0",
-    "lego-coral": "#F96C62",
-    "lego-white": "#F3F1EF",
-    "lego-black": "#151515"
+  "COLORS": {
+    "blue": "#006CB7",
+    "blue-bright": "#189E9F",
+    "blue-azur": "#00BED3",
+    "blue-royal": "#788FEA",
+    "blue-fluorescent": "#84C8E2",
+    "blue-sand": "#678297",
+    "blue-aqua": "#C1E4DA",
+    "green": "#00A850",
+    "green-sand": "#6F947A",
+    "green-tr": "#00A8AF",
+    "yellow": "#FFCD03",
+    "yellow-cool": "#FFF579",
+    "yellow-tr": "#F7D112",
+    "orange-reddish": "#F05729",
+    "orange-bright": "#F57D20",
+    "orange-coral": "#F96C62",
+    "lilac-lavender": "#BCA6D0",
+    "lilac-medium": "#4C2F92",
+    "lilac-violet": "#7672B5",
+    "brown-orange": "#A65322",
+    "brown-nougat": "#DE8B5F",
+    "brown-sand": "#947E5F",
+    "purple-light": "#F6ADCD",
+    "purple-medium": "#E8509C",
+    "red-bright": "#DD1A21",
+    "silver-metalic": "#878D8F",
+    "grey-medium": "#A0A19F",
+    "white": "#F3F1EF",
+    "white-transparent": "#EFEFEE",
+    "black": "#151515"
   }
 }
